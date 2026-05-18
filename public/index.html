@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDentifica - Sistema de Registro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { background-color: #0b0f19; } /* Fondo negro azulado profundo */
+  </style>
+</head>
+<body class="text-slate-200 font-sans antialiased min-h-screen flex flex-col">
+
+  <nav class="bg-[#111827] border-b border-blue-900/40 px-6 py-4 flex justify-between items-center shadow-lg">
+    <div class="flex items-center space-x-3">
+      <i class="bi bi-fingerprint text-blue-500 text-2xl animate-pulse"></i>
+      <span class="text-xl font-bold tracking-wider text-white">IDentifica <span class="text-blue-500 text-sm font-medium">| INE Scanner</span></span>
+    </div>
+    <button id="btnLogOut" class="bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/60 px-4 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </button>
+  </nav>
+
+  <div class="container mx-auto p-4 md:p-6 flex-grow">
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
+        <span class="text-3xl font-extrabold text-blue-500 mb-1" id="statTotal">0</span>
+        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Registros</span>
+      </div>
+      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
+        <span class="text-3xl font-extrabold text-emerald-500 mb-1" id="statHoy">0</span>
+        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Escaneados Hoy</span>
+      </div>
+      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
+        <span class="text-3xl font-extrabold text-amber-500 mb-1" id="statRevision">0</span>
+        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">En Revisión Manual</span>
+      </div>
+      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
+        <span class="text-3xl font-extrabold text-cyan-400 mb-1" id="statPromedio">0%</span>
+        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Confianza Promedio</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+      
+      <div class="lg:col-span-5 bg-[#111827] border border-blue-900/30 rounded-xl p-5 flex flex-col shadow-xl">
+        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+          <i class="bi bi-camera text-blue-500"></i> Captura de Documento
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">Sube el anverso o reverso para iniciar la extracción por IA.</p>
+        
+        <div id="dropZone" class="border-2 border-dashed border-blue-900/60 hover:border-blue-500 bg-[#0b0f19]/60 rounded-xl p-8 text-center cursor-pointer flex-grow flex flex-col items-center justify-center transition-all group">
+          <i class="bi bi-cloud-arrow-up text-4xl text-blue-900 group-hover:text-blue-500 mb-3 transition-colors"></i>
+          <p class="text-sm font-medium text-slate-300">Arrastra tu INE o haz clic para buscar</p>
+          <p class="text-xs text-slate-500 mt-1">Formatos admitidos: PNG, JPG</p>
+          <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/png">
+        </div>
+
+        <div id="previewContainer" class="hidden flex flex-col h-full justify-between">
+          <div class="bg-[#0b0f19] p-2 rounded-xl border border-blue-900/20 text-center">
+            <img id="imgPreview" src="" class="max-h-56 mx-auto rounded-lg object-contain">
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-4">
+            <button id="btnProcesar" class="col-span-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-2 px-4 rounded-lg shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
+              <i class="bi bi-cpu"></i> Procesar con Groq
+            </button>
+            <button id="btnLimpiar" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm py-2 px-3 rounded-lg transition-all">
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7 bg-[#111827] border border-blue-900/30 rounded-xl p-5 shadow-xl">
+        <div class="flex justify-between items-center border-b border-blue-900/20 pb-3 mb-4">
+          <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="bi bi-file-earmark-text text-blue-500"></i> Datos Extraídos</h2>
+          <span id="txtConfianza" class="bg-slate-800 text-slate-400 text-xs px-2.5 py-1 rounded-full font-mono border border-slate-700">Sin Procesar</span>
+        </div>
+
+        <form id="formIne" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nombre(s)</label><input type="text" id="txtNombre" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase" required></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Apellido Paterno</label><input type="text" id="txtApPaterno" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase" required></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Apellido Materno</label><input type="text" id="txtApMaterno" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">CURP</label><input type="text" id="txtCurp" maxlength="18" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-400 focus:outline-none focus:border-blue-500 uppercase" required></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Clave de Elector</label><input type="text" id="txtClave" maxlength="18" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-400 focus:outline-none focus:border-blue-500 uppercase" required></div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="col-span-2"><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Fecha Nacimiento</label><input type="text" id="txtNacimiento" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="DD/MM/AAAA"></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Sección</label><input type="number" id="txtSeccion" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500" required></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Sexo</label><input type="text" id="txtSexo" maxlength="1" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-center text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Estado / Entidad</label><input type="text" id="txtEstado" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Dirección Completa</label><input type="text" id="txtDireccion" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+          </div>
+
+          <button type="submit" id="btnGuardar" class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-transparent text-white font-bold py-2.5 rounded-lg text-sm shadow-md transition-all flex items-center justify-center gap-2 border border-emerald-500/20" disabled>
+            <i class="bi bi-floppy"></i> Guardar Registro en la Base de Datos
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="bg-[#111827] border border-blue-900/30 rounded-xl p-5 shadow-xl">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-blue-900/20 pb-4">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="bi bi-database-search text-blue-500"></i> Registros Guardados</h2>
+          <p class="text-xs text-slate-400">Filtrado inteligente multicriterio con coincidencia parcial.</p>
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <input type="text" id="filterQuery" class="bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 w-full sm:w-64" placeholder="Buscar por Nombre, CURP o Clave...">
+          <button id="btnBuscar" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-4 py-1.5 rounded-lg shadow-md transition-all">Buscar</button>
+          <button id="btnExportar" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-semibold text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all"><i class="bi bi-file-earmark-excel"></i> CSV</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-lg border border-blue-900/20">
+        <table class="w-full text-left border-collapse text-xs md:text-sm">
+          <thead>
+            <tr class="bg-[#0b0f19] border-b border-blue-900/40 text-slate-300 font-semibold">
+              <th class="p-3">Nombre Completo</th>
+              <th class="p-3">CURP / Clave Elector</th>
+              <th class="p-3">Sección</th>
+              <th class="p-3">Estado Extracción</th>
+              <th class="p-3">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaCuerpo" class="divide-y divide-blue-900/10 text-slate-300">
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="evidenciaModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-[#111827] border border-blue-900/60 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-blue-900/30 flex justify-between items-center bg-[#0b0f19]">
+        <h3 class="font-bold text-white flex items-center gap-2"><i class="bi bi-image text-blue-500"></i> Cotejo de Evidencia Original</h3>
+        <button onclick="cerrarModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+      <div class="p-4 bg-black flex justify-center">
+        <img id="imgModalEvidencia" src="" class="max-h-[65vh] rounded object-contain border border-blue-950">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configura tus credenciales reales aquí
+    const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentFileBlob = null;
+    let base64String = "";
+    let extractedCache = null;
+
+    // Proteger ruta
+    async function checkUser() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) window.location.href = "login.html";
+    }
+    window.addEventListener('DOMContentLoaded', checkUser);
+
+    document.getElementById('btnLogOut').onclick = async () => {
+      await supabase.auth.signOut();
+      window.location.href = "login.html";
+    };
+
+    // Funciones del Manejo de Archivos
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500', 'bg-blue-950/20'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('border-blue-500', 'bg-blue-950/20');
+    dropZone.ondrop = (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-blue-500', 'bg-blue-950/20');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    };
+    fileInput.onchange = (e) => { if (e.target.files.length) handleFile(e.target.files[0]); };
+
+    function handleFile(file) {
+      currentFileBlob = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        base64String = e.target.result.split(',')[1];
+        document.getElementById('imgPreview').src = e.target.result;
+        document.getElementById('previewContainer').classList.remove('hidden');
+        dropZone.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('btnLimpiar').onclick = () => {
+      currentFileBlob = null;
+      base64String = "";
+      document.getElementById('previewContainer').classList.add('hidden');
+      dropZone.classList.remove('hidden');
+      document.getElementById('formIne').reset();
+      document.getElementById('btnGuardar').disabled = true;
+    };
+
+    // Petición al Backend de Groq
+    document.getElementById('btnProcesar').onclick = async () => {
+      const btn = document.getElementById('btnProcesar');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat animate-spin"></i> Leyendo...`;
+      
+      try {
+        const res = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64String })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        
+        extractedCache = data;
+        
+        document.getElementById('txtNombre').value = data.nombres || '';
+        document.getElementById('txtApPaterno').value = data.apellido_paterno || '';
+        document.getElementById('txtApMaterno').value = data.apellido_materno || '';
+        document.getElementById('txtCurp').value = data.curp || '';
+        document.getElementById('txtClave').value = data.clave_elector || '';
+        document.getElementById('txtNacimiento').value = data.fecha_nacimiento || '';
+        document.getElementById('txtSeccion').value = data.seccion || '';
+        document.getElementById('txtSexo').value = data.sexo || '';
+        document.getElementById('txtEstado').value = data.estado || '';
+        document.getElementById('txtDireccion').value = data.direccion || '';
+        
+        const badge = document.getElementById('txtConfianza');
+        const conf = data.confianza_estimada || 82;
+        if (conf >= 85) {
+          badge.className = "bg-emerald-950 border border-emerald-500/40 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-mono";
+          badge.textContent = `Validado (${conf}%)`;
+        } else {
+          badge.className = "bg-amber-950 border border-amber-500/40 text-amber-400 text-xs px-2.5 py-1 rounded-full font-mono";
+          badge.textContent = `Revisión Manual (${conf}%)`;
+        }
+        
+        document.getElementById('btnGuardar').disabled = false;
+      } catch (err) {
+        alert("Error de procesamiento: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-cpu"></i> Procesar con Groq`;
+      }
+    };
+
+    // Guardar datos
+    document.getElementById('formIne').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnGuardar');
+      btn.disabled = true;
+
+      try {
+        const ext = currentFileBlob.name.split('.').pop();
+        const pathName = `${Date.now()}_${document.getElementById('txtCurp').value}.${ext}`;
+        
+        const { error: uploadErr } = await supabase.storage.from('evidencias-ine').upload(pathName, currentFileBlob);
+        if (uploadErr) throw uploadErr;
+        
+        const { data: { publicUrl } } = supabase.storage.from('evidencias-ine').getPublicUrl(pathName);
+        const conf = extractedCache?.confianza_estimada || 80;
+
+        const { error: dbErr } = await supabase.from('registros_ine').insert([{
+          nombres: document.getElementById('txtNombre').value.toUpperCase(),
+          apellido_paterno: document.getElementById('txtApPaterno').value.toUpperCase(),
+          apellido_materno: document.getElementById('txtApMaterno').value.toUpperCase(),
+          curp: document.getElementById('txtCurp').value.toUpperCase(),
+          clave_elector: document.getElementById('txtClave').value.toUpperCase(),
+          seccion: parseInt(document.getElementById('txtSeccion').value),
+          url_evidencia: publicUrl,
+          indice_confianza: conf,
+          estado_revision: conf >= 85 ? 'Validado' : 'Revisión Manual'
+        }]);
+
+        if (dbErr) throw dbErr;
+
+        alert("¡Registro insertado con éxito!");
+        document.getElementById('btnLimpiar').click();
+        fetchTableData();
+      } catch (err) {
+        alert("Error al persistir: " + err.message);
+        btn.disabled = false;
+      }
+    };
+
+    // Renderizado y Filtros LIKE
+    async function fetchTableData() {
+      const q = document.getElementById('filterQuery').value;
+      let query = supabase.from('registros_ine').select('*');
+      
+      if (q) {
+        query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
+      }
+
+      const { data, error } = await query.order('creado_en', { ascending: false });
+      if (error) return;
+
+      window.cachedData = data;
+      const tbody = document.getElementById('tablaCuerpo');
+      tbody.innerHTML = '';
+      
+      let revCount = 0;
+      let confSuma = 0;
+
+      data.forEach(r => {
+        if (r.estado_revision !== 'Validado') revCount++;
+        confSuma += r.indice_confianza;
+
+        const stClass = r.estado_revision === 'Validado' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-amber-950 text-amber-400 border-amber-800';
+        tbody.innerHTML += `
+          <tr class="hover:bg-blue-950/20 transition-colors">
+            <td class="p-3 font-semibold text-white">${r.nombres} ${r.apellido_paterno}</td>
+            <td class="p-3 font-mono text-blue-400">${r.curp}</td>
+            <td class="p-3">${r.seccion}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-xs border ${stClass}">${r.estado_revision} (${r.indice_confianza}%)</span></td>
+            <td class="p-3"><button onclick="verEvidencia('${r.url_evidencia}')" class="bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/50 text-blue-300 px-2 py-1 rounded text-xs transition-all"><i class="bi bi-eye"></i></button></td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('statTotal').textContent = data.length;
+      document.getElementById('statRevision').textContent = revCount;
+      document.getElementById('statPromedio').textContent = data.length ? Math.round(confSuma / data.length) + '%' : '0%';
+    }
+
+    window.verEvidencia = (url) => {
+      document.getElementById('imgModalEvidencia').src = url;
+      document.getElementById('evidenciaModal').classList.remove('hidden');
+    };
+    window.cerrarModal = () => document.getElementById('evidenciaModal').classList.add('hidden');
+
+    document.getElementById('btnBuscar').onclick = fetchTableData;
+    setTimeout(fetchTableData, 600);
+  </script>
+</body>
+</html>
