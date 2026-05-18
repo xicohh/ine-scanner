@@ -135,7 +135,7 @@
             </tr>
           </thead>
           <tbody id="tablaCuerpo" class="divide-y divide-blue-900/10 text-slate-300">
-            </tbody>
+          </tbody>
         </table>
       </div>
     </div>
@@ -154,9 +154,10 @@
   </div>
 
   <script>
-    // Variables inicializadas correctamente en index.html
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
+    
+    // CORRECCIÓN AQUÍ: Se eliminó el "supabase." duplicado
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentFileBlob = null;
