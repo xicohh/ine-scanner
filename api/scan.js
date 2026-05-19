@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
@@ -14,6 +16,9 @@ export default async function handler(req, res) {
     if (!apiKey) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
     }
+
+    // Inicializamos el SDK oficial de Google Gen AI con tu llave
+    const ai = new GoogleGenAI({ apiKey: apiKey });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
@@ -34,27 +39,24 @@ export default async function handler(req, res) {
       "indice_confianza": 85
     }`;
 
-    // Limpiamos los prefijos Base64 para enviar solo la cadena pura de bytes
+    // Limpiamos los prefijos Base64 para enviar la cadena de bytes pura que espera el SDK
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-    const contents = [
+    // Configuramos el contenido inline de la imagen según las especificaciones del SDK
+    const partesContenido = [
+      promptTexto,
       {
-        role: "user",
-        parts: [
-          { text: promptTexto },
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: cleanFrente
-            }
-          }
-        ]
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: cleanFrente
+        }
       }
     ];
 
+    // Si se subió el reverso del INE, lo limpiamos y lo agregamos al análisis
     if (reversoBase64 && reversoBase64.trim().length > 10) {
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
-      contents[0].parts.push({
+      partesContenido.push({
         inlineData: {
           mimeType: "image/jpeg",
           data: cleanReverso
@@ -62,34 +64,24 @@ export default async function handler(req, res) {
       });
     }
 
-    // CAMBIO CLAVE: Usamos la API v1 (Estable) y el modelo completo gemini-1.5-flash
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json" 
-        }
-      })
+    // Llamada oficial usando el método estructurado del SDK de Google
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: partesContenido,
+      config: {
+        temperature: 0.1,
+        responseMimeType: "application/json" // Forzamos formato JSON nativo
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API Error: ${errorText}`);
-    }
-
-    const resData = await response.json();
-    const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    console.log("Respuesta cruda de Gemini:", responseText);
+    const responseText = response.text?.trim();
+    console.log("Respuesta cruda de Gemini SDK:", responseText);
 
     if (!responseText) {
       throw new Error("Gemini no devolvió texto en la respuesta.");
     }
 
+    // Filtro para aislar de forma segura el objeto JSON
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("La IA no devolvió un formato JSON válido: " + responseText);
