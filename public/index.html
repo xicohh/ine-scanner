@@ -359,13 +359,11 @@
     // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // Historial de escaneos blindado contra cargas asíncronas nulas
-    // Historial de escaneos blindado contra cargas asíncronas nulas
+    // Historial de escaneos blindado al 100%
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
-        
-        // BLINDAJE REAL: Si filterInput existe, toma su valor; si es null, usa una cadena vacía
+        // Usamos protección en una sola línea integrada
         const q = filterInput ? filterInput.value.trim() : '';
         
         let query = supabaseClient.from('registros_ine').select('*');
@@ -374,7 +372,7 @@
           query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
         }
 
-        const { data, error } = await query.order('creado_en', { ascending: false });
+        const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
         const cuerpoTabla = document.getElementById('tablaRegistros');
