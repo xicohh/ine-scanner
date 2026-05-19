@@ -201,7 +201,7 @@
     };
     inputReverso.onchange = (e) => { if (e.target.files && e.target.files.length) loadFile(e.target.files[0], 'reverso'); };
 
-    // FUNCIÓN CORREGIDA CON COMPRESIÓN DE IMAGEN ACTIVA
+    // FUNCIÓN CON COMPRESIÓN DE IMAGEN ACTIVA
     async function loadFile(file, side) {
       if (!file) return;
 
@@ -214,7 +214,6 @@
 
       try {
         console.log(`Comprimiendo imagen de ${side}...`);
-        // Reducimos el tamaño del archivo usando la librería externa
         const archivoComprimido = await imageCompression(file, opciones);
         
         const reader = new FileReader();
@@ -222,14 +221,14 @@
           if (e.target && e.target.result) {
             const base64 = e.target.result.split(',')[1] || "";
             if (side === 'frente') {
-              fileBlobFrente = archivoComprimido; // Guardamos el blob optimizado
+              fileBlobFrente = archivoComprimido;
               base64Frente = base64;
               document.getElementById('imgPreviewFrente').src = e.target.result;
               document.getElementById('imgPreviewFrente').classList.remove('hidden');
               if(zoneFrente.querySelector('i')) zoneFrente.querySelector('i').classList.add('hidden');
               if(zoneFrente.querySelector('p')) zoneFrente.querySelector('p').classList.add('hidden');
             } else {
-              fileBlobReverso = archivoComprimido; // Guardamos el blob optimizado
+              fileBlobReverso = archivoComprimido;
               base64Reverso = base64;
               document.getElementById('imgPreviewReverso').src = e.target.result;
               document.getElementById('imgPreviewReverso').classList.remove('hidden');
@@ -248,7 +247,6 @@
     }
 
     // Petición al Backend /api/scan con Groq
-    // Petición al Backend /api/scan con Groq
     document.getElementById('btnProcesar').onclick = async () => {
       if (!base64Frente) return alert("Debes seleccionar al menos la imagen del Frente para procesar.");
       
@@ -266,7 +264,6 @@
           })
         });
 
-        // Modificación Antirrotura: Si el servidor da error (como un 500), leemos el texto directamente
         if (!response.ok) {
           const textoError = await response.text();
           throw new Error(textoError || "Error desconocido en el servidor");
@@ -322,8 +319,11 @@
           urlPublica = urlData.publicUrl;
         }
 
-        // Obtener el valor del índice alineado con el json de Groq de forma segura
         const valorConfianza = jsonExtraidoActual ? (jsonExtraidoActual.indice_confianza || 75) : 75;
+
+        // VALIDACIÓN ANTI-NULOS CRÍTICA PARA LA COLUMNA SECCIÓN
+        const seccionInput = document.getElementById('seccion').value;
+        const seccionEntera = isNaN(parseInt(seccionInput)) ? 0 : parseInt(seccionInput);
 
         // Insertar en registros_ine
         const { error: insertError } = await supabaseClient.from('registros_ine').insert([{
@@ -332,7 +332,7 @@
           apellido_materno: document.getElementById('apellido_materno').value.trim(),
           curp: document.getElementById('curp').value.trim(),
           clave_elector: document.getElementById('clave_elector').value.trim(),
-          seccion: parseInt(document.getElementById('seccion').value) || 0,
+          seccion: seccionEntera,
           estado_revision: valorConfianza >= 85 ? 'APROBADO' : 'PENDIENTE',
           indice_confianza: valorConfianza,
           url_evidencia: urlPublica
@@ -365,7 +365,7 @@
     // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // Historial de escaneos mapeado con 'creado_en'
+    // Historial de escaneos mapeado con 'created_at'
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
