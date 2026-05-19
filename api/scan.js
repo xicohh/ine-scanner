@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
     }
 
-    // Inicializamos el SDK oficial moderno
+    // Inicializamos el SDK oficial moderno con el paquete correcto
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
@@ -42,10 +42,10 @@ export default async function handler(req, res) {
     }`;
 
     // --- PROCESAMIENTO DEL FRENTE ---
-    // Extraemos el tipo MIME (ej. image/jpeg) de la cadena completa
+    // Extraemos el tipo MIME dinámico (jpeg, png, webp) gracias al prefijo completo enviado por el frontend
     const matchFrente = imageBase64.match(/^data:(image\/\w+);base64,/);
     const mimeFrente = matchFrente ? matchFrente[1] : "image/jpeg";
-    // Limpiamos el prefijo para dejarle a Gemini solo los bytes puros
+    // Limpiamos el encabezado para extraer solo la cadena de bytes puros que procesa la API
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
     const contents = [
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Llamada al modelo con la sintaxis correcta del nuevo SDK
+    // Ejecución de la llamada al modelo con el nuevo SDK oficial
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: contents,
@@ -82,25 +82,25 @@ export default async function handler(req, res) {
       }
     });
 
-    // CORRECCIÓN SDK: response.text es un string directo, no una función
+    // CORRECCIÓN: response.text en el nuevo SDK es un string directo
     const responseText = response.text ? response.text.trim() : "";
 
     if (!responseText) {
       throw new Error("Gemini devolvió una respuesta vacía.");
     }
 
-    // Intentar parsear el JSON de forma segura
+    // Parseo seguro del JSON estructurado
     let resultadoFinal;
     try {
       resultadoFinal = JSON.parse(responseText);
     } catch (parseError) {
-      // Fallback por si la IA llegó a meter triple comilla (```json ... ```)
+      // Fallback de emergencia por si la IA añade bloques markdown ```json ... ```
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("La IA no devolvió un formato JSON válido.");
       resultadoFinal = JSON.parse(jsonMatch[0]);
     }
 
-    // Mapeo de compatibilidad para el índice de confianza que espera tu index.html
+    // Mapeo automático de compatibilidad hacia lo que espera mapear tu index.html
     if (resultadoFinal && resultadoFinal.confianza && !resultadoFinal.indice_confianza) {
       resultadoFinal.indice_confianza = resultadoFinal.confianza;
     }
@@ -108,7 +108,7 @@ export default async function handler(req, res) {
     return res.status(200).json(resultadoFinal);
 
   } catch (error) {
-    console.error("Error en el servidor:", error);
+    console.error("Error crítico en el backend:", error);
     return res.status(500).json({ 
       error: 'Error interno en el escáner', 
       details: error.message 
