@@ -1,13 +1,16 @@
-import Groq from "groq-sdk";
+const Groq = require("groq-sdk");
 
+// Inicializamos el SDK de Groq con la variable de entorno de Vercel
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // RNF-01: Control de método POST
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
+  }
 
   try {
-    // CORRECCIÓN: Extraemos tanto el frente como el reverso enviados por el nuevo frontend
+    // Extraemos tanto el frente como el reverso enviados por el frontend
     const { imageBase64, reversoBase64 } = req.body; 
 
     if (!imageBase64) {
@@ -23,24 +26,25 @@ export default async function handler(req, res) {
         
         REGLAS DE NEGOCIO Y NORMALIZACIÓN: 
         1. Convierte TODOS los textos a MAYÚSCULAS y remueve acentos.
-        2. "seccion" debe ser estrictamente un NÚMERO entero (ej: 2467). Si no viene o no es legible, pon 0.
-        3. "sexo" debe ser una sola letra: "H" o "M".
-        4. "fecha_nacimiento" debe estar en formato estricto DD/MM/AAAA.
-        5. "confianza_estimada" debe ser un número entero entre 0 y 100 evaluando la legibilidad.
-        6. Si una imagen corresponde al reverso (atrás), lee detenidamente las líneas del código MRZ (tipo pasaporte) y los códigos de barras para cruzar información de los apellidos, nombres o sección si el frente estuviera borroso.
-
-        Devuelve ÚNICAMENTE el objeto JSON extraído de la credencial, sin texto extra, sin formato markdown (\`\`\`json):
+        2. "seccion" debe ser estrictamente un NÚMERO entero (ej: 1234).
+        3. Remueve espacios intermedios en CURP y Clave de Elector.
+        4. "sexo" debe ser estrictamente una sola letra: "H" o "M".
+        5. Devuelve una estimación numérica del porcentaje de legibilidad/certeza en "confianza_estimada" (un entero entre 0 y 100).
+        
+        ESTRUCTURA JSON REQUERIDA (Usa exactamente estos campos, si no encuentras alguno ponlo como cadena vacía o nulo):
         {
-          "nombres": "CHRISTIAN JARED",
-          "apellido_paterno": "TEJEDA",
-          "apellido_materno": "RUVALCABA",
-          "curp": "TERC060106HJCJVRA3",
-          "clave_elector": "TJRVCR06010614H500",
-          "fecha_nacimiento": "06/01/2006",
-          "seccion": 2467,
-          "estado": "JALISCO",
+          "apellido_paterno": "RODRIGUEZ",
+          "apellido_materno": "LOPEZ",
+          "nombres": "JUAN CARLOS",
+          "curp": "ROLJ940518HDFRNS03",
+          "clave_elector": "ROLJ94051814M300",
+          "fecha_nacimiento": "18/05/1994",
+          "seccion": 2594,
           "sexo": "H",
-          "folio": "06010614341218MEX",
+          "estado": "JALISCO",
+          "direccion": "AV CENTRAL 123 COL CENTRO GUADALAJARA JAL",
+          "cic": "14341218",
+          "ocr_identificador": "14341218MEX",
           "codigo_barras": "IIMEX2594626880<<2467137073815",
           "confianza_estimada": 83
         }`
@@ -51,7 +55,7 @@ export default async function handler(req, res) {
       }
     ];
 
-    // SI EL USUARIO SUBIÓ EL REVERSO, SE LO INYECTAMOS AL ARREGLO DE IMÁGENES DE GROQ
+    // Si el frontend mandó el reverso, se lo inyectamos al arreglo de imágenes de Groq
     if (reversoBase64) {
       contenidoMensaje.push({
         type: "image_url",
@@ -59,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // RF-02, RF-03 y Matriz de Trazabilidad: Extracción, segmentación y normalización
+    // Ejecutamos la llamada al modelo de visión de Groq
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -67,21 +71,26 @@ export default async function handler(req, res) {
           content: contenidoMensaje
         }
       ],
-      // Usamos el modelo optimizado de visión Llama 3.2 de la plataforma Groq Cloud
       model: "llama-3.2-11b-vision-preview", 
       temperature: 0.1, 
     });
 
-    const responseText = chatCompletion.choices[0].message.content.trim();
+    const responseText = chatCompletion.choices[0].message.content;
 
-    // Limpieza de posibles marcas de markdown que ponga la IA por error
-    const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-    
-    const parsedData = JSON.parse(cleanJson);
+    // Limpiamos posibles bloques de marcado markdown (\`\`\`json ... \`\`\`) que a veces añade el modelo
+    const cleanJSON = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    // Parseamos la respuesta para garantizar que mandamos un objeto estructurado
+    const parsedData = JSON.parse(cleanJSON);
+
+    // Retornamos exitosamente los datos limpios al cliente
     return res.status(200).json(parsedData);
 
   } catch (error) {
     console.error("Error crítico en el backend /api/scan:", error);
-    return res.status(500).json({ error: "Fallo al procesar la imagen con Groq: " + error.message });
+    return res.status(500).json({ 
+      error: "Error interno al procesar con Groq", 
+      details: error.message 
+    });
   }
-}
+};
