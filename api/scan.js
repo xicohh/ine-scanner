@@ -18,17 +18,18 @@ module.exports = async function handler(req, res) {
     const contenidoMensaje = [
       { 
         type: "text", 
-        text: `Eres un sistema experto OCR en extraer datos de credenciales INE de México. 
-        Analiza las imágenes adjuntas (frente y/o reverso) y extrae la información real del documento.
+        text: `Eres un sistema experto OCR en extraer datos de credenciales INE de México.
+        Analiza con extremo detalle las imágenes adjuntas (frente y/o reverso) para extraer la información REAL del documento.
         
-        REGLAS STRICTAS:
-        1. Convierte todo el texto a MAYÚSCULAS y quita acentos.
-        2. "seccion" debe ser un número entero (ej: 2467). Si no es legible, pon 0.
-        3. "sexo" debe ser "H" o "M".
-        4. "fecha_nacimiento" debe estar en formato DD/MM/AAAA.
-        5. "confianza_estimada" debe ser un número entero entre 0 y 100.
+        REGLAS ESTRICTAS:
+        1. NO inventes datos. Extrae ÚNICAMENTE lo que aparezca físicamente.
+        2. Convierte todo el texto a MAYÚSCULAS y remueve acentos.
+        3. "seccion" debe ser un número entero. Si no viene o no es legible, pon 0.
+        4. "sexo" debe ser una sola letra: "H" o "M".
+        5. "fecha_nacimiento" debe estar en formato DD/MM/AAAA.
+        6. "indice_confianza" debe ser un número entero entre 0 y 100 evaluando la legibilidad general de la imagen.
 
-        Devuelve un objeto JSON con esta estructura exacta:
+        Devuelve un objeto JSON estructurado exactamente así:
         {
           "apellido_paterno": "VALOR",
           "apellido_materno": "VALOR",
@@ -40,7 +41,7 @@ module.exports = async function handler(req, res) {
           "sexo": "VALOR",
           "estado": "VALOR",
           "direccion": "VALOR",
-          "confianza_estimada": 85
+          "indice_confianza": 85
         }`
       },
       {
@@ -56,7 +57,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Forzamos el uso de json_object nativo en Groq para evitar errores de parseo
+    // Forzamos la respuesta como objeto JSON puro directamente desde la API
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: contenidoMensaje }],
       model: "llama-3.2-11b-vision-preview", 

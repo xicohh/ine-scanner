@@ -257,7 +257,7 @@
         document.getElementById('clave_elector').value = resultado.clave_elector || '';
         document.getElementById('seccion').value = resultado.seccion || 0;
 
-        // Activar el botón de guardar
+        // Activar el botón de guardar de forma inmediata
         document.getElementById('btnGuardar').disabled = false;
 
       } catch (err) {
@@ -296,6 +296,9 @@
           urlPublica = urlData.publicUrl;
         }
 
+        // Obtener el valor del índice alineado con el json de Groq de forma segura
+        const valorConfianza = jsonExtraidoActual ? (jsonExtraidoActual.indice_confianza || 75) : 75;
+
         // Insertar en registros_ine
         const { error: insertError } = await supabaseClient.from('registros_ine').insert([{
           nombres: document.getElementById('nombres').value.trim(),
@@ -304,8 +307,8 @@
           curp: document.getElementById('curp').value.trim(),
           clave_elector: document.getElementById('clave_elector').value.trim(),
           seccion: parseInt(document.getElementById('seccion').value) || 0,
-          estado_revision: (jsonExtraidoActual && jsonExtraidoActual.confianza_estimada >= 85) ? 'APROBADO' : 'PENDIENTE',
-          indice_confianza: jsonExtraidoActual ? jsonExtraidoActual.confianza_estimada : 70,
+          estado_revision: valorConfianza >= 85 ? 'APROBADO' : 'PENDIENTE',
+          indice_confianza: valorConfianza,
           url_evidencia: urlPublica
         }]);
 
@@ -336,7 +339,7 @@
     // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // FUNCIÓN DE HISTORIAL CORREGIDA Y ANTIRROTURA
+    // FUNCIÓN DE HISTORIAL CORREGIDA Y ANTIRROTURA (Almacenamiento e Historial)
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
@@ -359,7 +362,7 @@
         let sumaConfianza = 0;
 
         data.forEach(reg => {
-          // Filtrado de valores nulos o indefinidos para evitar fallos catastróficos en la renderización
+          // Filtrado antirrotura completo
           const nombresVal = reg.nombres || '';
           const paternoVal = reg.apellido_paterno || '';
           const maternoVal = reg.apellido_materno || '';
