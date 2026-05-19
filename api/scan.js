@@ -3,7 +3,7 @@ const { Groq } = require("groq-sdk");
 // Inicializamos el SDK de Groq usando la variable de entorno de Vercel
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Asegurar que solo acepte peticiones POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
