@@ -56,39 +56,61 @@
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
-    // Configuración unificada usando el cliente renombrado
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Configuración unificada usando el cliente global de la CDN
+    const supabaseClient = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const form = document.getElementById('authForm');
 
+    // Manejo exclusivo del botón "Ingresar"
     form.onsubmit = async (e) => {
-      e.preventDefault();
+      e.preventDefault(); // Detiene cualquier envío automático del formulario
+      e.stopPropagation(); // Evita que el evento se propague a otras funciones
+      
       const btn = document.getElementById('btnIngresar');
       btn.disabled = true;
+      btn.innerText = "Cargando...";
 
-      // CORREGIDO: Ahora llama correctamente a supabaseClient
-      const { error } = await supabaseClient.auth.signInWithPassword({
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value
-      });
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value
+        });
 
-      if (error) {
+        if (error) throw error;
+
+        // Si el login es exitoso, redirige inmediatamente
+        window.location.href = "index.html";
+      } catch (error) {
         alert("Fallo de inicio de sesión: " + error.message);
         btn.disabled = false;
-      } else {
-        window.location.href = "index.html";
+        btn.innerText = "Ingresar al Sistema";
       }
     };
 
-    document.getElementById('btnRegistrar').onclick = async () => {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      if (!email || !password) return alert("Completa los datos en los inputs.");
+    // Manejo exclusivo del botón "Registrar"
+    document.getElementById('btnRegistrar').onclick = async (e) => {
+      e.preventDefault(); // Forzamos a que NO haga submit al formulario
+      e.stopPropagation();
 
-      // CORREGIDO: Ahora llama correctamente a supabaseClient
-      const { error } = await supabaseClient.auth.signUp({ email, password });
-      if (error) alert("Error: " + error.message);
-      else alert("¡Usuario administrador guardado con éxito! Revisa tu correo o intenta loguearte.");
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if (!email || !password) {
+        return alert("Por favor, completa los campos de correo y contraseña para registrarte.");
+      }
+
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({ 
+          email: email, 
+          password: password 
+        });
+        
+        if (error) throw error;
+        
+        alert("¡Usuario administrador creado con éxito! Intenta ingresar al sistema.");
+      } catch (error) {
+        alert("Error al registrar: " + error.message);
+      }
     };
   </script>
 </body>
