@@ -157,7 +157,7 @@
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
-    // CORRECCIÓN AQUÍ: Se eliminó el "supabase." duplicado
+    // Configuración correcta usando el cliente local independiente
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentFileBlob = null;
@@ -166,13 +166,15 @@
 
     // Proteger ruta de sesión
     async function checkUser() {
-      const { data: { session } } = await supabase.auth.getSession();
+      // CORREGIDO: Ahora usa supabaseClient
+      const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) window.location.href = "login.html";
     }
     window.addEventListener('DOMContentLoaded', checkUser);
 
     document.getElementById('btnLogOut').onclick = async () => {
-      await supabase.auth.signOut();
+      // CORREGIDO: Ahora usa supabaseClient
+      await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     };
 
@@ -268,13 +270,16 @@
         const ext = currentFileBlob.name.split('.').pop();
         const pathName = `${Date.now()}_${document.getElementById('txtCurp').value}.${ext}`;
         
-        const { error: uploadErr } = await supabase.storage.from('evidencias-ine').upload(pathName, currentFileBlob);
+        // CORREGIDO: Ahora usa supabaseClient
+        const { error: uploadErr } = await supabaseClient.storage.from('evidencias-ine').upload(pathName, currentFileBlob);
         if (uploadErr) throw uploadErr;
         
-        const { data: { publicUrl } } = supabase.storage.from('evidencias-ine').getPublicUrl(pathName);
+        // CORREGIDO: Ahora usa supabaseClient
+        const { data: { publicUrl } } = supabaseClient.storage.from('evidencias-ine').getPublicUrl(pathName);
         const conf = extractedCache?.confianza_estimada || 80;
 
-        const { error: dbErr } = await supabase.from('registros_ine').insert([{
+        // CORREGIDO: Ahora usa supabaseClient
+        const { error: dbErr } = await supabaseClient.from('registros_ine').insert([{
           nombres: document.getElementById('txtNombre').value.toUpperCase(),
           apellido_paterno: document.getElementById('txtApPaterno').value.toUpperCase(),
           apellido_materno: document.getElementById('txtApMaterno').value.toUpperCase(),
@@ -300,7 +305,8 @@
     // Renderizado y Filtros LIKE
     async function fetchTableData() {
       const q = document.getElementById('filterQuery').value;
-      let query = supabase.from('registros_ine').select('*');
+      // CORREGIDO: Ahora usa supabaseClient
+      let query = supabaseClient.from('registros_ine').select('*');
       
       if (q) {
         query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
