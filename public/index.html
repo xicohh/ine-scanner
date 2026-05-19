@@ -205,7 +205,6 @@
     async function loadFile(file, side) {
       if (!file) return;
 
-      // Opciones de compresión: Máximo 1MB de peso y resolución óptima para el OCR
       const opciones = {
         maxSizeMB: 1,
         maxWidthOrHeight: 1280,
@@ -272,7 +271,6 @@
         const resultado = await response.json();
         jsonExtraidoActual = resultado;
 
-        // Auto-completar inputs del formulario
         document.getElementById('nombres').value = resultado.nombres || '';
         document.getElementById('apellido_paterno').value = resultado.apellido_paterno || '';
         document.getElementById('apellido_materno').value = resultado.apellido_materno || '';
@@ -280,7 +278,6 @@
         document.getElementById('clave_elector').value = resultado.clave_elector || '';
         document.getElementById('seccion').value = resultado.seccion || 0;
 
-        // Activar el botón de guardar de forma inmediata
         document.getElementById('btnGuardar').disabled = false;
 
       } catch (err) {
@@ -321,11 +318,9 @@
 
         const valorConfianza = jsonExtraidoActual ? (jsonExtraidoActual.indice_confianza || 75) : 75;
 
-        // VALIDACIÓN ANTI-NULOS CRÍTICA PARA LA COLUMNA SECCIÓN
         const seccionInput = document.getElementById('seccion').value;
         const seccionEntera = isNaN(parseInt(seccionInput)) ? 0 : parseInt(seccionInput);
 
-        // Insertar en registros_ine
         const { error: insertError } = await supabaseClient.from('registros_ine').insert([{
           nombres: document.getElementById('nombres').value.trim(),
           apellido_paterno: document.getElementById('apellido_paterno').value.trim(),
@@ -342,7 +337,6 @@
 
         alert("¡Registro e imagen guardados exitosamente!");
         
-        // Resetear Formulario e Interfaz
         document.getElementById('formDatos').reset();
         document.getElementById('imgPreviewFrente').classList.add('hidden');
         document.getElementById('imgPreviewReverso').classList.add('hidden');
@@ -365,10 +359,11 @@
     // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // Historial de escaneos mapeado con 'created_at'
+    // Historial de escaneos blindado contra cargas asíncronas nulas
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
+        // BLINDAJE CRÍTICO: Si el input aún no existe en el DOM, asume cadena vacía
         const q = filterInput ? filterInput.value.trim() : '';
         
         let query = supabaseClient.from('registros_ine').select('*');
