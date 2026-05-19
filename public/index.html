@@ -157,8 +157,8 @@
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
-    // Configuración correcta usando el cliente local independiente
-    const supabase = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // CORREGIDO: Usamos supabaseClient para que no choque con la palabra reservada de la librería
+    const supabaseClient = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentFileBlob = null;
     let base64String = "";
@@ -166,14 +166,13 @@
 
     // Proteger ruta de sesión
     async function checkUser() {
-      // CORREGIDO: Ahora usa supabaseClient
+      // Usando el cliente correcto
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) window.location.href = "login.html";
     }
     window.addEventListener('DOMContentLoaded', checkUser);
 
     document.getElementById('btnLogOut').onclick = async () => {
-      // CORREGIDO: Ahora usa supabaseClient
       await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     };
@@ -270,15 +269,12 @@
         const ext = currentFileBlob.name.split('.').pop();
         const pathName = `${Date.now()}_${document.getElementById('txtCurp').value}.${ext}`;
         
-        // CORREGIDO: Ahora usa supabaseClient
         const { error: uploadErr } = await supabaseClient.storage.from('evidencias-ine').upload(pathName, currentFileBlob);
         if (uploadErr) throw uploadErr;
         
-        // CORREGIDO: Ahora usa supabaseClient
         const { data: { publicUrl } } = supabaseClient.storage.from('evidencias-ine').getPublicUrl(pathName);
         const conf = extractedCache?.confianza_estimada || 80;
 
-        // CORREGIDO: Ahora usa supabaseClient
         const { error: dbErr } = await supabaseClient.from('registros_ine').insert([{
           nombres: document.getElementById('txtNombre').value.toUpperCase(),
           apellido_paterno: document.getElementById('txtApPaterno').value.toUpperCase(),
@@ -305,7 +301,6 @@
     // Renderizado y Filtros LIKE
     async function fetchTableData() {
       const q = document.getElementById('filterQuery').value;
-      // CORREGIDO: Ahora usa supabaseClient
       let query = supabaseClient.from('registros_ine').select('*');
       
       if (q) {
