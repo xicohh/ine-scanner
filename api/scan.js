@@ -1,8 +1,10 @@
-const { Groq } = require("groq-sdk");
+// 1. CAMBIA EL REQUIRE POR IMPORT (Línea 1):
+import { Groq } from "groq-sdk";
 
 // Inicializamos el SDK de Groq usando la variable de entorno de Vercel
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// 2. ASEGÚRATE DE QUE EXPORT DEFAULT QUEDE ASÍ (Línea 6):
 export default async function handler(req, res) {
   // Asegurar que solo acepte peticiones POST
   if (req.method !== 'POST') {
