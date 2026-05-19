@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDentifica - Sistema de Registro</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css)">
+  <script src="[https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2)"></script>
   <style>
     body { background-color: #0b0f19; }
   </style>
@@ -139,8 +139,7 @@
                 <th class="p-2.5">Estado</th>
               </tr>
             </thead>
-            <tbody id="tablaRegistros" class="text-slate-300 divide-y divide-slate-900">
-              </tbody>
+            <tbody id="tablaRegistros" class="text-slate-300 divide-y divide-slate-900"></tbody>
           </table>
         </div>
       </div>
@@ -148,7 +147,7 @@
   </main>
 
   <script>
-    const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
+    const SUPABASE_URL = "[https://nlgriqiaxltgdqxurggp.supabase.co](https://nlgriqiaxltgdqxurggp.supabase.co)";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -158,7 +157,6 @@
     let base64Reverso = "";
     let jsonExtraidoActual = null;
 
-    // Verificar sesión al cargar
     window.onload = async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) {
@@ -168,13 +166,11 @@
       }
     };
 
-    // Logout
     document.getElementById('btnLogOut').onclick = async () => {
       await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     };
 
-    // Configuración de Carga de Archivos e Imágenes (Frente)
     const zoneFrente = document.getElementById('dropZoneFrente');
     const inputFrente = document.getElementById('fileInputFrente');
     zoneFrente.onclick = () => inputFrente.click();
@@ -187,7 +183,6 @@
     };
     inputFrente.onchange = (e) => { if (e.target.files && e.target.files.length) loadFile(e.target.files[0], 'frente'); };
 
-    // Configuración de Carga de Archivos e Imágenes (Reverso)
     const zoneReverso = document.getElementById('dropZoneReverso');
     const inputReverso = document.getElementById('fileInputReverso');
     zoneReverso.onclick = () => inputReverso.click();
@@ -226,7 +221,6 @@
       reader.readAsDataURL(file);
     }
 
-    // Petición al Backend /api/scan con Groq
     document.getElementById('btnProcesar').onclick = async () => {
       if (!base64Frente) return alert("Debes seleccionar al menos la imagen del Frente para procesar.");
       
@@ -249,7 +243,6 @@
 
         jsonExtraidoActual = resultado;
 
-        // Auto-completar inputs del formulario
         document.getElementById('nombres').value = resultado.nombres || '';
         document.getElementById('apellido_paterno').value = resultado.apellido_paterno || '';
         document.getElementById('apellido_materno').value = resultado.apellido_materno || '';
@@ -257,7 +250,6 @@
         document.getElementById('clave_elector').value = resultado.clave_elector || '';
         document.getElementById('seccion').value = resultado.seccion || 0;
 
-        // Activar el botón de guardar de forma inmediata
         document.getElementById('btnGuardar').disabled = false;
 
       } catch (err) {
@@ -269,7 +261,6 @@
       }
     };
 
-    // Guardar en Supabase Database + Storage
     document.getElementById('formDatos').onsubmit = async (e) => {
       e.preventDefault();
       const btnSave = document.getElementById('btnGuardar');
@@ -296,10 +287,9 @@
           urlPublica = urlData.publicUrl;
         }
 
-        // Obtener el valor del índice alineado con el json de Groq de forma segura
+        // Blindaje completo del índice de confianza alineado con el backend
         const valorConfianza = jsonExtraidoActual ? (jsonExtraidoActual.indice_confianza || 75) : 75;
 
-        // Insertar en registros_ine
         const { error: insertError } = await supabaseClient.from('registros_ine').insert([{
           nombres: document.getElementById('nombres').value.trim(),
           apellido_paterno: document.getElementById('apellido_paterno').value.trim(),
@@ -316,7 +306,6 @@
 
         alert("¡Registro e imagen guardados exitosamente!");
         
-        // Resetear Formulario e Interfaz
         document.getElementById('formDatos').reset();
         document.getElementById('imgPreviewFrente').classList.add('hidden');
         document.getElementById('imgPreviewReverso').classList.add('hidden');
@@ -331,15 +320,13 @@
       } catch (err) {
         alert("Error al guardar: " + err.message);
         btnSave.disabled = false;
-      } finally {
+      } finaly {
         btnSave.innerHTML = `<i class="bi bi-cloud-arrow-up"></i> Guardar Registro en Base de Datos`;
       }
     };
 
-    // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // FUNCIÓN DE HISTORIAL CORREGIDA Y ANTIRROTURA (Almacenamiento e Historial)
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
@@ -362,7 +349,6 @@
         let sumaConfianza = 0;
 
         data.forEach(reg => {
-          // Filtrado antirrotura completo
           const nombresVal = reg.nombres || '';
           const paternoVal = reg.apellido_paterno || '';
           const maternoVal = reg.apellido_materno || '';
@@ -394,7 +380,6 @@
           `;
         });
 
-        // Actualizar estadísticas superiores de manera segura
         if(document.getElementById('statTotal')) document.getElementById('statTotal').textContent = data.length;
         if(document.getElementById('statRevision')) document.getElementById('statRevision').textContent = contadorRevision;
         if(document.getElementById('statPromedio')) document.getElementById('statPromedio').textContent = data.length ? Math.round(sumaConfianza / data.length) + '%' : '0%';

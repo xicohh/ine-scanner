@@ -1,9 +1,10 @@
-const Groq = require("groq-sdk");
+const { Groq } = require("groq-sdk");
 
-// Inicializamos el SDK de Groq de forma segura
+// Inicializamos el SDK de Groq usando la variable de entorno de Vercel
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 module.exports = async function handler(req, res) {
+  // Asegurar que solo acepte peticiones POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -19,7 +20,7 @@ module.exports = async function handler(req, res) {
       { 
         type: "text", 
         text: `Eres un sistema experto OCR en extraer datos de credenciales INE de México.
-        Analiza con extremo detalle las imágenes adjuntas (frente y/o reverso) para extraer la información REAL del documento.
+        Analiza las imágenes adjuntas (frente y/o reverso) para extraer la información REAL del documento.
         
         REGLAS ESTRICTAS:
         1. NO inventes datos. Extrae ÚNICAMENTE lo que aparezca físicamente.
@@ -57,17 +58,21 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Forzamos la respuesta como objeto JSON puro directamente desde la API
+    // Llamada a la API de Groq
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: contenidoMensaje }],
       model: "llama-3.2-11b-vision-preview", 
-      temperature: 0.1,
-      response_format: { type: "json_object" }
+      temperature: 0.1
     });
 
-    const responseText = chatCompletion.choices[0].message.content.trim();
-    const parsedData = JSON.parse(responseText);
+    let responseText = chatCompletion.choices[0].message.content.trim();
     
+    // Limpieza antirrotura por si la IA responde con bloques de Markdown ```json ... ```
+    if (responseText.includes("```")) {
+      responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+    }
+    
+    const parsedData = JSON.parse(responseText);
     return res.status(200).json(parsedData);
 
   } catch (error) {
