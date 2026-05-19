@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
     }
 
-    // Adaptamos el Prompt para que coincida exactamente con las IDs de tu index.html
+    // Prompt configurado con las propiedades exactas que tu index.html necesita leer
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
     
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
     
-    // Construcción del payload nativo compatible con la API REST v1 de Google
+    // Payload con la estructura de objetos nativos en partes
     const contents = [
       {
         parts: [
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Endpoint nativo v1 estable
+    // Endpoint directo v1
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
         contents: contents,
         generationConfig: {
           temperature: 0.1,
-          responseMimeType: "application/json" // <-- Formato correcto validado por la API REST
+          response_mime_type: "application/json" // <-- SOLUCIÓN: Guion bajo obligatorio para la API REST directa
         }
       })
     });
@@ -92,6 +92,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Gemini no devolvió texto en la respuesta." });
     }
 
+    // Extraemos el JSON puro por si la IA añade caracteres de adorno
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return res.status(500).json({ error: "La IA no devolvió un formato JSON válido." });
