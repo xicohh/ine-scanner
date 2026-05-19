@@ -18,11 +18,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
     }
 
-    // Inicializamos el SDK clásico
+    // --- CORRECCIÓN DEFINITIVA AQUÍ ---
+    // Forzamos al SDK clásico a utilizar la versión estable 'v1' de la API de Google
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // CORRECCIÓN PRINCIPAL: Usamos la versión de producción estable del modelo
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel(
+      { model: 'gemini-1.5-flash' }, 
+      { apiVersion: 'v1' } // <-- Esto evita que use v1beta y tire el error 404
+    );
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
@@ -44,7 +46,7 @@ export default async function handler(req, res) {
       "confianza": 95
     }`;
 
-    // Estructura de contenido oficial requerida por el SDK tradicional
+    // Estructura de contenido requerida por el SDK tradicional
     const partesContenido = [
       { text: promptTexto }
     ];
@@ -75,7 +77,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Llamada al modelo forzando la respuesta JSON de forma segura en la versión estable
+    // Invocación al modelo
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: partesContenido }],
       generationConfig: {
@@ -87,7 +89,7 @@ export default async function handler(req, res) {
     const responseText = result.response.text() ? result.response.text().trim() : "";
 
     if (!responseText) {
-      throw new Error("Gemini de Google devolvió una respuesta vacía.");
+      throw new Error("Gemini devolvió una respuesta vacía.");
     }
 
     // Parseo seguro del JSON estructurado
