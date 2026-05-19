@@ -374,7 +374,7 @@
           query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
         }
 
-        const { data, error } = await query.order('created_at', { ascending: false });
+        const { data, error } = await query.order('creado_en', { ascending: false });
         if (error) throw error;
 
         const cuerpoTabla = document.getElementById('tablaRegistros');
