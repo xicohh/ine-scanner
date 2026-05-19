@@ -14,10 +14,10 @@ export default async function handler(req, res) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
+      return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor Vercel' });
     }
 
-    // 1. Inicializamos el SDK oficial de Google
+    // 1. Inicializamos correctamente el SDK oficial de nueva generación
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
@@ -40,30 +40,35 @@ export default async function handler(req, res) {
       "confianza": 95
     }`;
 
-    // 2. Preparamos los archivos estructurados como los pide el SDK
+    // 2. Extraer dinámicamente el tipo MIME (jpeg, png, webp) para evitar rechazos de la API
+    const matchFrente = imageBase64.match(/^data:(image\/\w+);base64,/);
+    const mimeFrente = matchFrente ? matchFrente[1] : "image/jpeg";
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
     const contents = [
       promptTexto,
       {
         inlineData: {
-          mimeType: "image/jpeg",
+          mimeType: mimeFrente,
           data: cleanFrente
         }
       }
     ];
 
     if (reversoBase64) {
+      const matchReverso = reversoBase64.match(/^data:(image\/\w+);base64,/);
+      const mimeReverso = matchReverso ? matchReverso[1] : "image/jpeg";
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
+      
       contents.push({
         inlineData: {
-          mimeType: "image/jpeg",
+          mimeType: mimeReverso,
           data: cleanReverso
         }
       });
     }
 
-    // 3. Llamamos a Gemini usando el método oficial. 
-    // Aquí el SDK valida internamente los parámetros y no fallará jamás por texto mal formateado.
+    // 3. Petición utilizando la API estructurada de @google/genai
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: contents,
@@ -73,22 +78,25 @@ export default async function handler(req, res) {
       }
     });
 
-    // El SDK nos devuelve directamente el texto limpio en .text
     const responseText = response.text?.trim();
 
     if (!responseText) {
-      throw new Error("Gemini no devolvió texto en la respuesta.");
+      throw new Error("Gemini devolvió una respuesta vacía.");
     }
 
-    // Parseo directo optimizado
     let resultadoFinal;
     try {
       resultadoFinal = JSON.parse(responseText);
     } catch (parseError) {
-      // Safe fallback por si acaso incluye bloques de marcado ```json
+      // Fallback seguro si la IA envuelve la respuesta en bloques de código markdown ```json ... ```
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("La IA no devolvió un formato JSON válido.");
       resultadoFinal = JSON.parse(jsonMatch[0]);
+    }
+
+    // Mapear "confianza" a "indice_confianza" para que coincida con lo que busca tu index.html
+    if (resultadoFinal && resultadoFinal.confianza && !resultadoFinal.indice_confianza) {
+      resultadoFinal.indice_confianza = resultadoFinal.confianza;
     }
 
     return res.status(200).json(resultadoFinal);

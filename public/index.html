@@ -247,12 +247,13 @@
     }
 
     // Petición al Backend /api/scan con Groq
+    // Petición al Backend /api/scan con Gemini
     document.getElementById('btnProcesar').onclick = async () => {
       if (!base64Frente) return alert("Debes seleccionar al menos la imagen del Frente para procesar.");
       
       const btn = document.getElementById('btnProcesar');
       btn.disabled = true;
-      btn.innerHTML = `<i class="bi bi-arrow-clockwise animate-spin"></i> Analizando con Llama Vision...`;
+      btn.innerHTML = `<i class="bi bi-arrow-clockwise animate-spin"></i> Analizando con Gemini AI...`;
 
       try {
         const response = await fetch('/api/scan', {
@@ -267,11 +268,10 @@
         if (!response.ok) {
           let mensajeError = "Error desconocido en el servidor";
           try {
-            // Intentamos leerlo como JSON primero (por si viene de tu scan.js)
             const errorData = await response.json();
-            mensajeError = errorData.error || mensajeError;
+            // Mostramos el detalle exacto enviado por el catch del servidor
+            mensajeError = errorData.details ? `${errorData.error}: ${errorData.details}` : (errorData.error || mensajeError);
           } catch (jsonErr) {
-            // Si no es JSON, capturamos el texto directo que envía Vercel
             mensajeError = await response.text().catch(() => mensajeError);
           }
           throw new Error(mensajeError);
@@ -280,6 +280,7 @@
         const resultado = await response.json();
         jsonExtraidoActual = resultado;
 
+        // Autocompletar los inputs de tu formulario
         document.getElementById('nombres').value = resultado.nombres || '';
         document.getElementById('apellido_paterno').value = resultado.apellido_paterno || '';
         document.getElementById('apellido_materno').value = resultado.apellido_materno || '';
@@ -294,7 +295,7 @@
         console.error(err);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-cpu"></i> Procesar con Groq`;
+        btn.innerHTML = `<i class="bi bi-cpu"></i> Procesar con GeminiAI`;
       }
     };
 
