@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       "indice_confianza": 85
     }`;
 
-    // CORRECCIÓN AQUÍ: Se añade la propiedad data y se limpia el string de base64 si incluye metadata
+    // Limpiamos los prefijos Base64 para enviar solo la cadena pura de bytes
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
     const contents = [
@@ -62,8 +62,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Usamos el endpoint oficial de la v1beta para soporte nativo de JSON configurado
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // CAMBIO CLAVE: Usamos la API v1 (Estable) y el modelo completo gemini-1.5-flash
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: 'POST',
