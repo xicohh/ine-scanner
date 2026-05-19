@@ -219,7 +219,7 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target && e.target.result) {
-            const base64 = e.target.result.split(',')[1] || "";
+            const base64 = e.target.result.split || "";
             if (side === 'frente') {
               fileBlobFrente = archivoComprimido;
               base64Frente = base64;

@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req, res) {
+  // Asegurar método POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -14,10 +15,10 @@ export default async function handler(req, res) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor Vercel' });
+      return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
     }
 
-    // 1. Inicializamos correctamente el SDK oficial de nueva generación
+    // Inicializamos el SDK oficial moderno
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
@@ -40,9 +41,11 @@ export default async function handler(req, res) {
       "confianza": 95
     }`;
 
-    // 2. Extraer dinámicamente el tipo MIME (jpeg, png, webp) para evitar rechazos de la API
+    // --- PROCESAMIENTO DEL FRENTE ---
+    // Extraemos el tipo MIME (ej. image/jpeg) de la cadena completa
     const matchFrente = imageBase64.match(/^data:(image\/\w+);base64,/);
     const mimeFrente = matchFrente ? matchFrente[1] : "image/jpeg";
+    // Limpiamos el prefijo para dejarle a Gemini solo los bytes puros
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
     const contents = [
@@ -55,6 +58,7 @@ export default async function handler(req, res) {
       }
     ];
 
+    // --- PROCESAMIENTO DEL REVERSO (SI EXISTE) ---
     if (reversoBase64) {
       const matchReverso = reversoBase64.match(/^data:(image\/\w+);base64,/);
       const mimeReverso = matchReverso ? matchReverso[1] : "image/jpeg";
@@ -68,7 +72,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Petición utilizando la API estructurada de @google/genai
+    // Llamada al modelo con la sintaxis correcta del nuevo SDK
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: contents,
@@ -78,23 +82,25 @@ export default async function handler(req, res) {
       }
     });
 
-    const responseText = response.text?.trim();
+    // CORRECCIÓN SDK: response.text es un string directo, no una función
+    const responseText = response.text ? response.text.trim() : "";
 
     if (!responseText) {
       throw new Error("Gemini devolvió una respuesta vacía.");
     }
 
+    // Intentar parsear el JSON de forma segura
     let resultadoFinal;
     try {
       resultadoFinal = JSON.parse(responseText);
     } catch (parseError) {
-      // Fallback seguro si la IA envuelve la respuesta en bloques de código markdown ```json ... ```
+      // Fallback por si la IA llegó a meter triple comilla (```json ... ```)
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("La IA no devolvió un formato JSON válido.");
       resultadoFinal = JSON.parse(jsonMatch[0]);
     }
 
-    // Mapear "confianza" a "indice_confianza" para que coincida con lo que busca tu index.html
+    // Mapeo de compatibilidad para el índice de confianza que espera tu index.html
     if (resultadoFinal && resultadoFinal.confianza && !resultadoFinal.indice_confianza) {
       resultadoFinal.indice_confianza = resultadoFinal.confianza;
     }
@@ -102,7 +108,7 @@ export default async function handler(req, res) {
     return res.status(200).json(resultadoFinal);
 
   } catch (error) {
-    console.error("Error en el manejador del escáner:", error);
+    console.error("Error en el servidor:", error);
     return res.status(500).json({ 
       error: 'Error interno en el escáner', 
       details: error.message 
