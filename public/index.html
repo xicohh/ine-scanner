@@ -10,6 +10,7 @@
   <style>
     body { background-color: #0b0f19; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/browser-image-compression/2.0.2/browser-image-compression.min.js"></script>
 </head>
 <body class="text-slate-200 font-sans antialiased min-h-screen flex flex-col">
 
@@ -140,7 +141,7 @@
               </tr>
             </thead>
             <tbody id="tablaRegistros" class="text-slate-300 divide-y divide-slate-900">
-              </tbody>
+            </tbody>
           </table>
         </div>
       </div>
@@ -200,30 +201,46 @@
     };
     inputReverso.onchange = (e) => { if (e.target.files && e.target.files.length) loadFile(e.target.files[0], 'reverso'); };
 
-    function loadFile(file, side) {
+    // Función optimizada con compresión automática integrada
+    async function loadFile(file, side) {
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target && e.target.result) {
-          const base64 = e.target.result.split(',')[1] || "";
-          if (side === 'frente') {
-            fileBlobFrente = file;
-            base64Frente = base64;
-            document.getElementById('imgPreviewFrente').src = e.target.result;
-            document.getElementById('imgPreviewFrente').classList.remove('hidden');
-            if(zoneFrente.querySelector('i')) zoneFrente.querySelector('i').classList.add('hidden');
-            if(zoneFrente.querySelector('p')) zoneFrente.querySelector('p').classList.add('hidden');
-          } else {
-            fileBlobReverso = file;
-            base64Reverso = base64;
-            document.getElementById('imgPreviewReverso').src = e.target.result;
-            document.getElementById('imgPreviewReverso').classList.remove('hidden');
-            if(zoneReverso.querySelector('i')) zoneReverso.querySelector('i').classList.add('hidden');
-            if(zoneReverso.querySelector('p')) zoneReverso.querySelector('p').classList.add('hidden');
-          }
-        }
+
+      const opciones = {
+        maxSizeMB: 1,            // Limita el archivo final a un peso máximo cercano a 1MB
+        maxWidthOrHeight: 1280,  // Redimensiona la resolución para que no consuma memoria excesiva
+        useWebWorker: true
       };
-      reader.readAsDataURL(file);
+
+      try {
+        // Ejecuta la compresión en segundo plano
+        const archivoComprimido = await imageCompression(file, opciones);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target && e.target.result) {
+            const base64 = e.target.result.split(',')[1] || "";
+            if (side === 'frente') {
+              fileBlobFrente = archivoComprimido; // Almacenamos el blob comprimido para subir a Storage
+              base64Frente = base64;
+              document.getElementById('imgPreviewFrente').src = e.target.result;
+              document.getElementById('imgPreviewFrente').classList.remove('hidden');
+              if(zoneFrente.querySelector('i')) zoneFrente.querySelector('i').classList.add('hidden');
+              if(zoneFrente.querySelector('p')) zoneFrente.querySelector('p').classList.add('hidden');
+            } else {
+              fileBlobReverso = archivoComprimido; // Almacenamos el blob comprimido para subir a Storage
+              base64Reverso = base64;
+              document.getElementById('imgPreviewReverso').src = e.target.result;
+              document.getElementById('imgPreviewReverso').classList.remove('hidden');
+              if(zoneReverso.querySelector('i')) zoneReverso.querySelector('i').classList.add('hidden');
+              if(zoneReverso.querySelector('p')) zoneReverso.querySelector('p').classList.add('hidden');
+            }
+          }
+        };
+        reader.readAsDataURL(archivoComprimido);
+      } catch (error) {
+        console.error("Error al optimizar y comprimir la imagen:", error);
+        alert("No se pudo procesar la imagen seleccionada. Intenta con un formato o archivo distinto.");
+      }
     }
 
     // Petición al Backend /api/scan con Groq
@@ -280,7 +297,7 @@
         let urlPublica = "";
 
         if (fileBlobFrente) {
-          const fileExt = fileBlobFrente.name.split('.').pop();
+          const fileExt = fileBlobFrente.name ? fileBlobFrente.name.split('.').pop() : 'jpg';
           const fileName = `${Date.now()}_frente.${fileExt}`;
           
           const { data: uploadData, error: uploadError } = await supabaseClient.storage
@@ -339,7 +356,7 @@
     // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // FUNCIÓN DE HISTORIAL CORREGIDA Y ANTIRROTURA (Almacenamiento e Historial)
+    // FUNCIÓN DE HISTORIAL CONECTADA CON LA COLUMNA 'creado_en'
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
