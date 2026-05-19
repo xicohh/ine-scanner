@@ -158,7 +158,7 @@
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
     // CORRECCIÓN AQUÍ: Se eliminó el "supabase." duplicado
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentFileBlob = null;
     let base64String = "";
