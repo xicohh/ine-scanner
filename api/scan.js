@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // Asegurar que solo acepte peticiones POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -15,15 +16,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
     }
 
-    // Le exigimos el formato JSON directamente en el prompt de forma ultra-estricta
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
     
-    IMPORTANTE: Responde ÚNICAMENTE con un objeto JSON válido, plano, sin usar bloques de código markdown (no uses \`\`\`json ni \`\`\`).
-    
     REGLAS DE ORO:
-    1. Si un campo no es legible o no viene, devuélvelo como una cadena vacía "" (o 0 para la sección).
-    2. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
+    1. Responde ÚNICAMENTE con el objeto JSON solicitado. No agregues introducciones, explicaciones ni bloques Markdown.
+    2. Si un campo no es legible o no viene, devuélvelo como una cadena vacía "" (o 0 para la sección).
+    3. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
 
     Estructura exacta del JSON que debes devolver:
     {
@@ -32,15 +31,16 @@ export default async function handler(req, res) {
       "nombres": "VALOR",
       "curp": "VALOR",
       "clave_elector": "VALOR",
-      "seccion": 1234,
-      "estado_revision": "APROBADO/PENDIENTE",
-      "indice_confianza": 95
+      "seccion": 0,
+      "indice_confianza": 85
     }`;
 
+    // Limpieza estricta de metadatos Base64 para enviar solo la cadena de bytes pura
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    
+
     const contents = [
       {
+        role: "user",
         parts: [
           { text: promptTexto },
           {
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       }
     ];
 
-    if (reversoBase64) {
+    if (reversoBase64 && reversoBase64.trim().length > 10) {
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
       contents[0].parts.push({
         inlineData: {
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Endpoint directo v1 estable
+    // Endpoint de producción v1 estable
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -73,39 +73,35 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         contents: contents,
-        // Quitamos generationConfig por completo para evitar errores de nombres desconocidos
         generationConfig: {
-          temperature: 0.1
+          temperature: 0.1,
+          responseMIMEType: "application/json" 
         }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      return res.status(400).json({ error: `Google API Error: ${errorText}` });
+      throw new Error(`Google API v1 Error: ${errorText}`);
     }
 
     const resData = await response.json();
     const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!responseText) {
-      return res.status(500).json({ error: "Gemini no devolvió texto en la respuesta." });
+      throw new Error("Gemini no devolvió texto en la respuesta.");
     }
 
-    // Expresión regular robusta para extraer el JSON pase lo que pase
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return res.status(500).json({ error: "La IA no devolvió un formato JSON válido." });
+      throw new Error("La IA no devolvió un formato JSON válido.");
     }
-
-    const resultadoFinal = JSON.parse(jsonMatch[0]);
-    return res.status(200).json(resultadoFinal);
+    
+    const parsedData = JSON.parse(jsonMatch[0]);
+    return res.status(200).json(parsedData);
 
   } catch (error) {
-    console.error("Error en el manejador del escáner:", error);
-    return res.status(500).json({ 
-      error: 'Error interno en el escáner', 
-      details: error.message 
-    });
+    console.error("Error en /api/scan:", error);
+    return res.status(500).json({ error: "Error interno en el escáner: " + error.message });
   }
 }
