@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ENDPOINT DE PRODUCCIÓN GLOBAL (v1 - ESTABLE Y FIJO)
+    // Endpoint de producción v1 estable
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
         contents: contents,
         generationConfig: {
           temperature: 0.1,
-          responseMimeType: "application/json"
+          response_mime_type: "application/json" // <--- CORREGIDO AQUÍ (guion bajo para API nativa)
         }
       })
     });
