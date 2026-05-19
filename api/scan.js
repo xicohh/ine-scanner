@@ -19,18 +19,15 @@ module.exports = async function handler(req, res) {
     const contenidoMensaje = [
       { 
         type: "text", 
-        text: `Eres un sistema experto OCR en extraer datos de credenciales INE de México.
-        Analiza las imágenes adjuntas (frente y/o reverso) para extraer la información REAL del documento.
+        text: `Eres un sistema experto OCR automatizado para credenciales INE de México.
+        Analiza las imágenes adjuntas para extraer la información del documento.
         
-        REGLAS ESTRICTAS:
-        1. NO inventes datos. Extrae ÚNICAMENTE lo que aparezca físicamente.
-        2. Convierte todo el texto a MAYÚSCULAS y remueve acentos.
-        3. "seccion" debe ser un número entero. Si no viene o no es legible, pon 0.
-        4. "sexo" debe ser una sola letra: "H" o "M".
-        5. "fecha_nacimiento" debe estar en formato DD/MM/AAAA.
-        6. "indice_confianza" debe ser un número entero entre 0 y 100 evaluando la legibilidad general de la imagen.
+        REGLAS DE ORO:
+        1. Responde ÚNICAMENTE con el objeto JSON solicitado. No agregues introducciones, explicaciones ni bloques Markdown.
+        2. Si un campo no es legible o no viene, devuélvelo como una cadena vacía "" (o 0 para la sección).
+        3. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
 
-        Devuelve un objeto JSON estructurado exactamente así:
+        Estructura exacta del JSON que debes devolver:
         {
           "apellido_paterno": "VALOR",
           "apellido_materno": "VALOR",
@@ -38,10 +35,6 @@ module.exports = async function handler(req, res) {
           "curp": "VALOR",
           "clave_elector": "VALOR",
           "seccion": 0,
-          "fecha_nacimiento": "VALOR",
-          "sexo": "VALOR",
-          "estado": "VALOR",
-          "direccion": "VALOR",
           "indice_confianza": 85
         }`
       },
@@ -58,7 +51,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Llamada a la API de Groq
+    // Llamada a la API de Groq usando el modelo Llama Vision
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: contenidoMensaje }],
       model: "llama-3.2-11b-vision-preview", 
@@ -66,17 +59,21 @@ module.exports = async function handler(req, res) {
     });
 
     let responseText = chatCompletion.choices[0].message.content.trim();
-    
-    // Limpieza antirrotura por si la IA responde con bloques de Markdown ```json ... ```
-    if (responseText.includes("```")) {
-      responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+    console.log("Respuesta cruda de Groq:", responseText);
+
+    // Filtro Antirrotura Avanzado: Extrae solo lo que esté entre las llaves { ... }
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("La IA no devolvió un formato JSON válido: " + responseText);
     }
     
-    const parsedData = JSON.parse(responseText);
+    const cleanJsonText = jsonMatch[0];
+    const parsedData = JSON.parse(cleanJsonText);
+    
     return res.status(200).json(parsedData);
 
   } catch (error) {
     console.error("Error crítico en el backend /api/scan:", error);
-    return res.status(500).json({ error: "Fallo al procesar con Groq: " + error.message });
+    return res.status(500).json({ error: "Error interno en el escáner: " + error.message });
   }
 };
