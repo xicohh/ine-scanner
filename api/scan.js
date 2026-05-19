@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req, res) {
   // Asegurar método POST
@@ -18,10 +18,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
     }
 
-    // Inicializamos el SDK clásico oficial de Google
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Instanciamos el modelo apto para visión multimodal
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Inicializamos el SDK oficial moderno con el paquete correcto
+    const ai = new GoogleGenAI({ apiKey: apiKey });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
@@ -48,7 +46,8 @@ export default async function handler(req, res) {
     const mimeFrente = matchFrente ? matchFrente[1] : "image/jpeg";
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-    const partesContenido = [
+    // En el SDK @google/genai, la estructura correcta mezcla strings y objetos inlineData en el orden deseado
+    const contents = [
       promptTexto,
       {
         inlineData: {
@@ -64,7 +63,7 @@ export default async function handler(req, res) {
       const mimeReverso = matchReverso ? matchReverso[1] : "image/jpeg";
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
       
-      partesContenido.push({
+      contents.push({
         inlineData: {
           mimeType: mimeReverso,
           data: cleanReverso
@@ -72,16 +71,19 @@ export default async function handler(req, res) {
       });
     }
 
-    // Llamada al modelo usando la estructura correcta del SDK clásico
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: partesContenido }],
-      generationConfig: {
+    // Ejecución de la llamada al modelo adaptada al SDK oficial moderno
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      // Pasamos los elementos de manera explícita para evitar errores de mapeo interno del SDK
+      contents: contents,
+      config: {
         temperature: 0.1,
         responseMimeType: 'application/json'
       }
     });
 
-    const responseText = result.response.text() ? result.response.text().trim() : "";
+    // En el nuevo SDK la propiedad .text contiene la cadena directamente
+    const responseText = response.text ? response.text.trim() : "";
 
     if (!responseText) {
       throw new Error("Gemini devolvió una respuesta vacía.");
