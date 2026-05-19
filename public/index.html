@@ -11,6 +11,7 @@
     body { background-color: #0b0f19; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/browser-image-compression/2.0.2/browser-image-compression.min.js"></script>
+  <link rel="icon" href="data:,">
 </head>
 <body class="text-slate-200 font-sans antialiased min-h-screen flex flex-col">
 
@@ -264,8 +265,9 @@
         });
 
         if (!response.ok) {
-          const textoError = await response.text();
-          throw new Error(textoError || "Error desconocido en el servidor");
+          // Cambiamos text() por json() para leer el error real del backend
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Error desconocido en el servidor");
         }
 
         const resultado = await response.json();
@@ -372,7 +374,7 @@
           query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
         }
 
-        const { data, error } = await query.order('created_at', { ascending: false });
+        const { data, error } = await query.order('creado_en', { ascending: false });
         if (error) throw error;
 
         const cuerpoTabla = document.getElementById('tablaRegistros');
