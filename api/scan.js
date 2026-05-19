@@ -75,7 +75,7 @@ export default async function handler(req, res) {
         contents: contents,
         generationConfig: {
           temperature: 0.1,
-          responseMimeType: "application/json" 
+          responseMIMEType: "application/json" 
         }
       })
     });
