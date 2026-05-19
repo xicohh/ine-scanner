@@ -265,9 +265,16 @@
         });
 
         if (!response.ok) {
-          // Cambiamos text() por json() para leer el error real del backend
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Error desconocido en el servidor");
+          let mensajeError = "Error desconocido en el servidor";
+          try {
+            // Intentamos leerlo como JSON primero (por si viene de tu scan.js)
+            const errorData = await response.json();
+            mensajeError = errorData.error || mensajeError;
+          } catch (jsonErr) {
+            // Si no es JSON, capturamos el texto directo que envía Vercel
+            mensajeError = await response.text().catch(() => mensajeError);
+          }
+          throw new Error(mensajeError);
         }
 
         const resultado = await response.json();
