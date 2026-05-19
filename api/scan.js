@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     // Llamada a la API de Groq usando el modelo Llama Vision actualizado
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: contenidoMensaje }],
-      model: "llama-3.2-90b-vision", // <--- CAMBIADO AQUÍ
+      model: "llama-3.2-11b-vision-instant", // <--- CAMBIADO AQUÍ
       temperature: 0.1
     });
 
