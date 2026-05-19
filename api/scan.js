@@ -3,8 +3,9 @@ const Groq = require("groq-sdk");
 // Inicializamos el SDK de Groq con la variable de entorno de Vercel
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Usamos module.exports obligatorio para entornos Serverless de Vercel
 module.exports = async function handler(req, res) {
-  // RNF-01: Control de método POST
+  // Control de método POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -16,7 +17,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'No se recibió ninguna imagen base64 del frente' });
     }
 
-    // Construimos el contenido inicial con el Frente
+    // Construimos el contenido para el mensaje de Groq
     const contenidoMensaje = [
       { 
         type: "text", 
@@ -49,7 +50,7 @@ module.exports = async function handler(req, res) {
       }
     ];
 
-    // Inyectamos el reverso SOLO si el usuario realmente subió un archivo atrás
+    // Inyectamos el reverso SOLO si se subió un archivo
     if (reversoBase64 && reversoBase64.trim() !== "") {
       contenidoMensaje.push({
         type: "image_url",
@@ -57,7 +58,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Llamada al modelo de Groq Cloud
+    // Llamada al modelo de visión de Groq Cloud
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -71,11 +72,10 @@ module.exports = async function handler(req, res) {
 
     const responseText = chatCompletion.choices[0].message.content;
 
-    // Limpiamos marcas de bloques markdown que la IA suele poner automáticamente
+    // Limpiamos bloques markdown del texto de respuesta
     const cleanJSON = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsedData = JSON.parse(cleanJSON);
 
-    // Mandamos la respuesta final estructurada al frontend
     return res.status(200).json(parsedData);
 
   } catch (error) {
