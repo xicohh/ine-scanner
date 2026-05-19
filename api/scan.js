@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default async function handler(req, res) {
-  // Asegurar método POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -18,12 +17,16 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
     }
 
-    // --- CORRECCIÓN DEFINITIVA AQUÍ ---
-    // Forzamos al SDK clásico a utilizar la versión estable 'v1' de la API de Google
     const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // CORRECCIÓN AQUÍ: Declaramos el tipo de respuesta directo en la inicialización del modelo
+    // para evitar el error de mapeo interno de la propiedad 'generationConfig'.
     const model = genAI.getGenerativeModel(
-      { model: 'gemini-1.5-flash' }, 
-      { apiVersion: 'v1' } // <-- Esto evita que use v1beta y tire el error 404
+      { 
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: 'application/json' }
+      }, 
+      { apiVersion: 'v1' }
     );
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
@@ -46,7 +49,6 @@ export default async function handler(req, res) {
       "confianza": 95
     }`;
 
-    // Estructura de contenido requerida por el SDK tradicional
     const partesContenido = [
       { text: promptTexto }
     ];
@@ -77,12 +79,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // Invocación al modelo
+    // Ejecutamos la petición con una configuración de temperatura limpia
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: partesContenido }],
       generationConfig: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
+        temperature: 0.1
       }
     });
 
@@ -102,7 +103,6 @@ export default async function handler(req, res) {
       resultadoFinal = JSON.parse(jsonMatch[0]);
     }
 
-    // Mapeo automático de compatibilidad hacia lo que espera tu index.html
     if (resultadoFinal && resultadoFinal.confianza && !resultadoFinal.indice_confianza) {
       resultadoFinal.indice_confianza = resultadoFinal.confianza;
     }
