@@ -18,333 +18,371 @@
       <i class="bi bi-fingerprint text-blue-500 text-2xl animate-pulse"></i>
       <span class="text-xl font-bold tracking-wider text-white">IDentifica <span class="text-blue-500 text-sm font-medium">| INE Scanner</span></span>
     </div>
-    <button id="btnLogOut" class="bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/60 px-4 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2">
-      <i class="bi bi-box-arrow-right"></i> Salir
+    <button id="btnLogOut" class="text-slate-400 hover:text-rose-400 transition-colors flex items-center space-x-1 text-sm bg-slate-800/40 px-3 py-1.5 rounded-lg border border-slate-700/50">
+      <i class="bi bi-box-arrow-right"></i>
+      <span>Salir</span>
     </button>
   </nav>
 
-  <div class="container mx-auto p-4 md:p-6 flex-grow">
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
     
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
-        <span class="text-3xl font-extrabold text-blue-500 mb-1" id="statTotal">0</span>
-        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Registros</span>
+    <div class="lg:col-span-5 flex flex-col space-y-6">
+      
+      <div class="bg-[#111827] border border-blue-900/30 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+          <i class="bi bi-camera text-blue-400"></i>
+          <span>Captura de Documento (Ambas Caras)</span>
+        </h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          
+          <div class="border border-slate-800 bg-slate-950/50 rounded-xl p-3 text-center flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Frente (Anverso)</span>
+            <div id="dropzoneFrente" class="border-2 border-dashed border-blue-900/50 hover:border-blue-500/70 bg-slate-900/40 rounded-lg p-4 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px]" onclick="document.getElementById('fileFrente').click()">
+              <div id="previewFrente" class="text-slate-400 flex flex-col items-center">
+                <i class="bi bi-card-image text-2xl text-blue-500/70 mb-1"></i>
+                <span class="text-xs">Subir Frente</span>
+              </div>
+            </div>
+            <input type="file" id="fileFrente" accept="image/*" class="hidden" onchange="manejarSeleccionImagen(this, 'Frente')">
+            <input type="hidden" id="base64Frente">
+          </div>
+
+          <div class="border border-slate-800 bg-slate-950/50 rounded-xl p-3 text-center flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Reverso (Atrás)</span>
+            <div id="dropzoneReverso" class="border-2 border-dashed border-slate-700/40 hover:border-blue-500/70 bg-slate-900/40 rounded-lg p-4 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px]" onclick="document.getElementById('fileReverso').click()">
+              <div id="previewReverso" class="text-slate-400 flex flex-col items-center">
+                <i class="bi bi-credit-card-2-back text-2xl text-slate-500 mb-1"></i>
+                <span class="text-xs">Subir Reverso (Opcional)</span>
+              </div>
+            </div>
+            <input type="file" id="fileReverso" accept="image/*" class="hidden" onchange="manejarSeleccionImagen(this, 'Reverso')">
+            <input type="hidden" id="base64Reverso">
+          </div>
+
+        </div>
+
+        <button id="btnScan" onclick="procesarCredencialConIA()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-950/50 transition-all flex items-center justify-center space-x-2">
+          <i class="bi bi-cpu"></i>
+          <span>Procesar con Groq Vision</span>
+        </button>
       </div>
-      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
-        <span class="text-3xl font-extrabold text-emerald-500 mb-1" id="statHoy">0</span>
-        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Escaneados Hoy</span>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-[#111827] border border-blue-900/20 rounded-xl p-4 text-center shadow-md">
+          <div class="text-xs text-slate-400 font-medium">Total Escaneos</div>
+          <div id="statTotal" class="text-2xl font-black text-white mt-1">0</div>
+        </div>
+        <div class="bg-[#111827] border border-blue-900/20 rounded-xl p-4 text-center shadow-md">
+          <div class="text-xs text-slate-400 font-medium">En Revisión</div>
+          <div id="statRevision" class="text-2xl font-black text-amber-400 mt-1">0</div>
+        </div>
+        <div class="bg-[#111827] border border-blue-900/20 rounded-xl p-4 text-center shadow-md">
+          <div class="text-xs text-slate-400 font-medium">Confianza Avg</div>
+          <div id="statPromedio" class="text-2xl font-black text-emerald-400 mt-1">0%</div>
+        </div>
       </div>
-      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
-        <span class="text-3xl font-extrabold text-amber-500 mb-1" id="statRevision">0</span>
-        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">En Revisión Manual</span>
-      </div>
-      <div class="bg-[#111827] border border-blue-900/30 p-5 rounded-xl shadow-md flex flex-col items-center justify-center">
-        <span class="text-3xl font-extrabold text-cyan-400 mb-1" id="statPromedio">0%</span>
-        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Confianza Promedio</span>
-      </div>
+
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-      
-      <div class="lg:col-span-5 bg-[#111827] border border-blue-900/30 rounded-xl p-5 flex flex-col shadow-xl">
-        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
-          <i class="bi bi-camera text-blue-500"></i> Captura de Documento
-        </h2>
-        <p class="text-xs text-slate-400 mb-4">Sube el anverso o reverso para iniciar la extracción por IA.</p>
-        
-        <div id="dropZone" class="border-2 border-dashed border-blue-900/60 hover:border-blue-500 bg-[#0b0f19]/60 rounded-xl p-8 text-center cursor-pointer flex-grow flex flex-col items-center justify-center transition-all group">
-          <i class="bi bi-cloud-arrow-up text-4xl text-blue-900 group-hover:text-blue-500 mb-3 transition-colors"></i>
-          <p class="text-sm font-medium text-slate-300">Arrastra tu INE o haz clic para buscar</p>
-          <p class="text-xs text-slate-500 mt-1">Formatos admitidos: PNG, JPG</p>
-          <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/png">
+    <div class="lg:col-span-7 bg-[#111827] border border-blue-900/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+      <div>
+        <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-3">
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <i class="bi bi-file-earmark-text text-blue-400"></i>
+            <span>Datos Extraídos del Elector</span>
+          </h2>
+          <span class="text-xs bg-blue-950 text-blue-400 border border-blue-800 px-2.5 py-1 rounded-full font-mono">Modo Verificación</span>
         </div>
 
-        <div id="previewContainer" class="hidden flex flex-col h-full justify-between">
-          <div class="bg-[#0b0f19] p-2 rounded-xl border border-blue-900/20 text-center">
-            <img id="imgPreview" src="" class="max-h-[56] mx-auto rounded-lg object-contain">
+        <form id="registroForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nombre(s)</label>
+            <input type="text" id="nombres" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
           </div>
-          <div class="grid grid-cols-3 gap-2 mt-4">
-            <button id="btnProcesar" class="col-span-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-2 px-4 rounded-lg shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
-              <i class="bi bi-cpu"></i> Procesar con Groq
-            </button>
-            <button id="btnLimpiar" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm py-2 px-3 rounded-lg transition-all">
-              Limpiar
-            </button>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Ap. Paterno</label>
+              <input type="text" id="apellido_paterno" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Ap. Materno</label>
+              <input type="text" id="apellido_materno" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div class="lg:col-span-7 bg-[#111827] border border-blue-900/30 rounded-xl p-5 shadow-xl">
-        <div class="flex justify-between items-center border-b border-blue-900/20 pb-3 mb-4">
-          <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="bi bi-file-earmark-text text-blue-500"></i> Datos Extraídos</h2>
-          <span id="txtConfianza" class="bg-slate-800 text-slate-400 text-xs px-2.5 py-1 rounded-full font-mono border border-slate-700">Sin Procesar</span>
-        </div>
-
-        <form id="formIne" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Nombre(s)</label><input type="text" id="txtNombre" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase" required></div>
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Apellido Paterno</label><input type="text" id="txtApPaterno" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase" required></div>
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Apellido Materno</label><input type="text" id="txtApMaterno" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">CURP</label>
+            <input type="text" id="curp" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500 transition-colors">
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">CURP</label><input type="text" id="txtCurp" maxlength="18" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-400 focus:outline-none focus:border-blue-500 uppercase" required></div>
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Clave de Elector</label><input type="text" id="txtClave" maxlength="18" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-400 focus:outline-none focus:border-blue-500 uppercase" required></div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Clave de Elector</label>
+            <input type="text" id="clave_elector" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500 transition-colors">
           </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="col-span-2"><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Fecha Nacimiento</label><input type="text" id="txtNacimiento" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="DD/MM/AAAA"></div>
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Sección</label><input type="number" id="txtSeccion" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500" required></div>
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Sexo</label><input type="text" id="txtSexo" maxlength="1" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-center text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fecha Nacimiento</label>
+              <input type="text" id="fecha_nacimiento" placeholder="DD/MM/AAAA" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sección</label>
+              <input type="number" id="seccion" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Estado / Entidad</label><input type="text" id="txtEstado" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase"></div>
-            <div><label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Dirección Completa</label><input type="text" id="txtDireccion" class="w-full bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase"></div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sexo</label>
+              <input type="text" id="sexo" placeholder="H/M" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Estado</label>
+              <input type="text" id="estado" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
           </div>
-
-          <button type="submit" id="btnGuardar" class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-transparent text-white font-bold py-2.5 rounded-lg text-sm shadow-md transition-all flex items-center justify-center gap-2 border border-emerald-500/20" disabled>
-            <i class="bi bi-floppy"></i> Guardar Registro en la Base de Datos
-          </button>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Dirección Completa</label>
+            <input type="text" id="direccion" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+          </div>
         </form>
       </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-800 flex space-x-3">
+        <button type="button" id="btnLimpiar" class="bg-slate-950 hover:bg-slate-900 text-slate-400 border border-slate-800 font-medium py-2.5 px-4 rounded-xl transition-colors">
+          Limpiar
+        </button>
+        <button type="button" id="btnGuardar" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-950/30 transition-colors flex items-center justify-center space-x-2">
+          <i class="bi bi-cloud-arrow-up"></i>
+          <span>Guardar Registro en Base de Datos</span>
+        </button>
+      </div>
     </div>
 
-    <div class="bg-[#111827] border border-blue-900/30 rounded-xl p-5 shadow-xl">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-blue-900/20 pb-4">
-        <div>
-          <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="bi bi-database-search text-blue-500"></i> Registros Guardados</h2>
-          <p class="text-xs text-slate-400">Filtrado inteligente multicriterio con coincidencia parcial.</p>
-        </div>
-        <div class="flex gap-2 w-full sm:w-auto">
-          <input type="text" id="filterQuery" class="bg-[#0b0f19] border border-blue-900/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 w-full sm:w-64" placeholder="Buscar por Nombre, CURP o Clave...">
-          <button id="btnBuscar" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-4 py-1.5 rounded-lg shadow-md transition-all">Buscar</button>
-          <button id="btnExportar" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-semibold text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all"><i class="bi bi-file-earmark-excel"></i> CSV</button>
-        </div>
-      </div>
+  </main>
 
-      <div class="overflow-x-auto rounded-lg border border-blue-900/20">
-        <table class="w-full text-left border-collapse text-xs md:text-sm">
+  <section class="max-w-7xl mx-auto w-full px-6 pb-8 mt-4">
+    <div class="bg-[#111827] border border-blue-900/20 rounded-2xl p-5 shadow-xl">
+      <h3 class="text-md font-bold text-white mb-4 flex items-center space-x-2">
+        <i class="bi bi-database text-blue-400"></i>
+        <span>Últimas Credenciales Almacenadas</span>
+      </h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-[#0b0f19] border-b border-blue-900/40 text-slate-300 font-semibold">
-              <th class="p-3">Nombre Completo</th>
-              <th class="p-3">CURP / Clave Elector</th>
+            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider bg-slate-950/40">
+              <th class="p-3">Elector</th>
+              <th class="p-3">CURP</th>
               <th class="p-3">Sección</th>
-              <th class="p-3">Estado Extracción</th>
-              <th class="p-3">Acción</th>
+              <th class="p-3">Estado Revisión</th>
+              <th class="p-3">Evidencia</th>
             </tr>
           </thead>
-          <tbody id="tablaCuerpo" class="divide-y divide-blue-900/10 text-slate-300">
-          </tbody>
+          <tbody id="tablaRegistros" class="text-sm divide-y divide-slate-800/60">
+            </tbody>
         </table>
       </div>
     </div>
-  </div>
-
-  <div id="evidenciaModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-[#111827] border border-blue-900/60 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl">
-      <div class="p-4 border-b border-blue-900/30 flex justify-between items-center bg-[#0b0f19]">
-        <h3 class="font-bold text-white flex items-center gap-2"><i class="bi bi-image text-blue-500"></i> Cotejo de Evidencia Original</h3>
-        <button onclick="cerrarModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
-      </div>
-      <div class="p-4 bg-black flex justify-center">
-        <img id="imgModalEvidencia" src="" class="max-h-[65vh] rounded object-contain border border-blue-950">
-      </div>
-    </div>
-  </div>
+  </section>
 
   <script>
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
-    // CORREGIDO: Se cambia el nombre a supabaseClient para evitar colisiones con la CDN
     const supabaseClient = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let currentFileBlob = null;
-    let base64String = "";
-    let extractedCache = null;
+    // --- LOGICA DE RENDERIZADO Y PREVISUALIZACIÓN DE ARCHIVOS ---
+    function manejarSeleccionImagen(input, tipo) {
+      const file = input.files[0];
+      if (!file) return;
 
-    // Proteger ruta de sesión
-    async function checkUser() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) window.location.href = "login.html";
+      const lector = new FileReader();
+      lector.onload = function(e) {
+        // Almacenamos el Base64 puro original en el input hidden temporal
+        document.getElementById(`base64${tipo}`).value = e.target.result;
+        
+        // Reemplazamos el cuadro de texto por una miniatura real
+        const cajaPreview = document.getElementById(`preview${tipo}`);
+        cajaPreview.innerHTML = `
+          <img src="${e.target.result}" class="mx-auto h-24 object-contain rounded-lg shadow-md mb-1 border border-slate-700">
+          <span class="text-[10px] text-emerald-400 font-mono block">✓ Cargada</span>
+        `;
+      };
+      lector.readAsDataURL(file);
     }
-    window.addEventListener('DOMContentLoaded', checkUser);
+
+    // --- COMPRESOR MAESTRO DE IMÁGENES (Previene errores 413 Payload Too Large) ---
+    function redimensionarYComprimir(base64Original, anchoMaximo = 1100) {
+      return new Promise((resolve) => {
+        const imagenObjeto = new Image();
+        imagenObjeto.src = base64Original;
+        imagenObjeto.onload = () => {
+          const lienzoCanvas = document.createElement('canvas');
+          let nuevoAncho = imagenObjeto.width;
+          let nuevoAlto = imagenObjeto.height;
+
+          if (imagenObjeto.width > anchoMaximo) {
+            const factorEscala = anchoMaximo / imagenObjeto.width;
+            nuevoAncho = anchoMaximo;
+            nuevoAlto = imagenObjeto.height * factorEscala;
+          }
+
+          lienzoCanvas.width = nuevoAncho;
+          lienzoCanvas.height = nuevoAlto;
+          
+          const contexto = lienzoCanvas.getContext('2d');
+          contexto.drawImage(imagenObjeto, 0, 0, nuevoAncho, nuevoAlto);
+          
+          // Exportamos a JPEG comprimiendo la calidad al 65% (Pesa menos de 400KB y Groq lee perfecto)
+          const dataUrlComprimido = lienzoCanvas.toDataURL('image/jpeg', 0.65);
+          // Retornamos únicamente el cuerpo base64 limpio sin la cabecera data:image...
+          resolve(dataUrlComprimido.split(',')[1]);
+        };
+      });
+    }
+
+    // --- ENVÍO UNIFICADO HACIA EL BACKEND SERVERLESS DE VERCEL ---
+    async function procesarCredencialConIA() {
+      const botonEscanear = document.getElementById('btnScan');
+      const stringFrente = document.getElementById('base64Frente').value;
+      const stringReverso = document.getElementById('base64Reverso').value;
+
+      if (!stringFrente) {
+        alert("⚠️ Por favor, carga al menos la imagen del Frente (Anverso) para procesar.");
+        return;
+      }
+
+      botonEscanear.disabled = true;
+      botonEscanear.innerHTML = `<i class="bi bi-hourglass-split animate-spin"></i> <span>Analizando Credencial con IA...</span>`;
+
+      try {
+        // Ejecutamos compresión en paralelo antes de enviar
+        const frenteListo = await redimensionarYComprimir(stringFrente);
+        let reversoListo = null;
+        if (stringReverso) {
+          reversoListo = await redimensionarYComprimir(stringReverso);
+        }
+
+        // Petición POST única a la API local de Vercel
+        const respuestaServidor = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageBase64: frenteListo,
+            reversoBase64: reversoListo
+          })
+        });
+
+        if (!respuestaServidor.ok) {
+          const cuerpoFalloText = await respuestaServidor.text();
+          throw new Error(`Fallo del servidor (${respuestaServidor.status}): ${cuerpoFalloText}`);
+        }
+
+        const jsonResultado = await respuestaServidor.getReader ? await respuestaServidor.json() : JSON.parse(await respuestaServidor.text());
+
+        // Llenado automático y limpio del panel derecho de verificación
+        document.getElementById('nombres').value = jsonResultado.nombres || '';
+        document.getElementById('apellido_paterno').value = jsonResultado.apellido_paterno || '';
+        document.getElementById('apellido_materno').value = jsonResultado.apellido_materno || '';
+        document.getElementById('curp').value = jsonResultado.curp || '';
+        document.getElementById('clave_elector').value = jsonResultado.clave_elector || '';
+        document.getElementById('fecha_nacimiento').value = jsonResultado.fecha_nacimiento || '';
+        document.getElementById('seccion').value = jsonResultado.seccion || '';
+        document.getElementById('sexo').value = jsonResultado.sexo || '';
+        document.getElementById('estado').value = jsonResultado.estado || '';
+        document.getElementById('direccion').value = jsonResultado.direccion || '';
+
+        alert("🎉 ¡Extracción completada de forma segura!");
+
+      } catch (error) {
+        console.error("Error crítico en envío frontend:", error);
+        alert("❌ Error de comunicación: El servidor no pudo procesar las dimensiones de la imagen. Verifica las variables de entorno o intenta con otra captura.");
+      } finally {
+        botonEscanear.disabled = false;
+        botonEscanear.innerHTML = `<i class="bi bi-cpu"></i> <span>Procesar con Groq Vision</span>`;
+      }
+    }
+
+    // --- ACCIONES SECUNDARIAS: LIMPIEZA DE FORMULARIO ---
+    document.getElementById('btnLimpiar').onclick = () => {
+      document.getElementById('registroForm').reset();
+      document.getElementById('base64Frente').value = "";
+      document.getElementById('base64Reverso').value = "";
+      document.getElementById('previewFrente').innerHTML = `<i class="bi bi-card-image text-2xl text-blue-500/70 mb-1"></i><span class="text-xs">Subir Frente</span>`;
+      document.getElementById('previewReverso').innerHTML = `<i class="bi bi-credit-card-2-back text-2xl text-slate-500 mb-1"></i><span class="text-xs">Subir Reverso (Opcional)</span>`;
+    };
+
+    // --- PROTECCIÓN DE RUTA DE USUARIO (AUTH) ---
+    async function verificarAutenticacion() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+      } else {
+        cargarHistorialDesdeSupabase();
+      }
+    }
 
     document.getElementById('btnLogOut').onclick = async () => {
       await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     };
 
-    // Funciones del Manejo de Archivos
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    
-    dropZone.onclick = () => fileInput.click();
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500', 'bg-blue-950/20'); };
-    dropZone.ondragleave = () => dropZone.classList.remove('border-blue-500', 'bg-blue-950/20');
-    dropZone.ondrop = (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-blue-500', 'bg-blue-950/20');
-      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-    };
-    fileInput.onchange = (e) => { if (e.target.files.length) handleFile(e.target.files[0]); };
+    // --- MANEJO DE HISTORIAL Y BASE DE DATOS ---
+    async function cargarHistorialDesdeSupabase() {
+      const { data, error } = await supabaseClient.from('registros_ine').select('*').order('created_at', { ascending: false });
+      if (error) return console.error("Error cargando historial:", error);
 
-    function handleFile(file) {
-      currentFileBlob = file;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        base64String = e.target.result.split(',')[1];
-        document.getElementById('imgPreview').src = e.target.result;
-        document.getElementById('previewContainer').classList.remove('hidden');
-        dropZone.classList.add('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
+      const cuerpoTabla = document.getElementById('tablaRegistros');
+      cuerpoTabla.innerHTML = "";
+      let contadorRevision = 0;
+      let sumaConfianza = 0;
 
-    document.getElementById('btnLimpiar').onclick = () => {
-      currentFileBlob = null;
-      base64String = "";
-      document.getElementById('previewContainer').classList.add('hidden');
-      dropZone.classList.remove('hidden');
-      document.getElementById('formIne').reset();
-      document.getElementById('btnGuardar').disabled = true;
-    };
+      data.forEach(reg => {
+        if (reg.estado_revision === 'PENDIENTE') contadorRevision++;
+        sumaConfianza += (reg.indice_confianza || 0);
 
-    // Petición al Backend de Groq
-    document.getElementById('btnProcesar').onclick = async () => {
-      const btn = document.getElementById('btnProcesar');
-      btn.disabled = true;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat animate-spin"></i> Leyendo...`;
-      
-      try {
-        const res = await fetch('/api/scan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: base64String })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
+        const claseEstilo = reg.estado_revision === 'APROBADO' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-amber-950 text-amber-400 border-amber-800';
         
-        extractedCache = data;
-        
-        document.getElementById('txtNombre').value = data.nombres || '';
-        document.getElementById('txtApPaterno').value = data.apellido_paterno || '';
-        document.getElementById('txtApMaterno').value = data.apellido_materno || '';
-        document.getElementById('txtCurp').value = data.curp || '';
-        document.getElementById('txtClave').value = data.clave_elector || '';
-        document.getElementById('txtNacimiento').value = data.fecha_nacimiento || '';
-        document.getElementById('txtSeccion').value = data.seccion || '';
-        document.getElementById('txtSexo').value = data.sexo || '';
-        document.getElementById('txtEstado').value = data.estado || '';
-        document.getElementById('txtDireccion').value = data.direccion || '';
-        
-        const badge = document.getElementById('txtConfianza');
-        const conf = data.confianza_estimada || 82;
-        if (conf >= 85) {
-          badge.className = "bg-emerald-950 border border-emerald-500/40 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-mono";
-          badge.textContent = `Validado (${conf}%)`;
-        } else {
-          badge.className = "bg-amber-950 border border-amber-500/40 text-amber-400 text-xs px-2.5 py-1 rounded-full font-mono";
-          badge.textContent = `Revisión Manual (${conf}%)`;
-        }
-        
-        document.getElementById('btnGuardar').disabled = false;
-      } catch (err) {
-        alert("Error de procesamiento: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-cpu"></i> Procesar con Groq`;
-      }
-    };
-
-    // Guardar datos
-    document.getElementById('formIne').onsubmit = async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btnGuardar');
-      btn.disabled = true;
-
-      try {
-        const ext = currentFileBlob.name.split('.').pop();
-        const pathName = `${Date.now()}_${document.getElementById('txtCurp').value}.${ext}`;
-        
-        const { error: uploadErr } = await supabaseClient.storage.from('evidencias-ine').upload(pathName, currentFileBlob);
-        if (uploadErr) throw uploadErr;
-        
-        const { data: { publicUrl } } = supabaseClient.storage.from('evidencias-ine').getPublicUrl(pathName);
-        const conf = extractedCache?.confianza_estimada || 80;
-
-        const { error: dbErr } = await supabaseClient.from('registros_ine').insert([{
-          nombres: document.getElementById('txtNombre').value.toUpperCase(),
-          apellido_paterno: document.getElementById('txtApPaterno').value.toUpperCase(),
-          apellido_materno: document.getElementById('txtApMaterno').value.toUpperCase(),
-          curp: document.getElementById('txtCurp').value.toUpperCase(),
-          clave_elector: document.getElementById('txtClave').value.toUpperCase(),
-          seccion: parseInt(document.getElementById('txtSeccion').value),
-          url_evidencia: publicUrl,
-          indice_confianza: conf,
-          estado_revision: conf >= 85 ? 'Validado' : 'Revisión Manual'
-        }]);
-
-        if (dbErr) throw dbErr;
-
-        alert("¡Registro insertado con éxito!");
-        document.getElementById('btnLimpiar').click();
-        fetchTableData();
-      } catch (err) {
-        alert("Error al persistir: " + err.message);
-        btn.disabled = false;
-      }
-    };
-
-    // Renderizado y Filtros LIKE
-    async function fetchTableData() {
-      const q = document.getElementById('filterQuery').value;
-      let query = supabaseClient.from('registros_ine').select('*');
-      
-      if (q) {
-        query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
-      }
-
-      const { data, error } = await query.order('creado_en', { ascending: false });
-      if (error) return;
-
-      window.cachedData = data;
-      const tbody = document.getElementById('tablaCuerpo');
-      tbody.innerHTML = '';
-      
-      let revCount = 0;
-      let confSuma = 0;
-
-      data.forEach(r => {
-        if (r.estado_revision !== 'Validado') revCount++;
-        confSuma += r.indice_confianza;
-
-        const stClass = r.estado_revision === 'Validado' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-amber-950 text-amber-400 border-amber-800';
-        tbody.innerHTML += `
-          <tr class="hover:bg-blue-950/20 transition-colors">
-            <td class="p-3 font-semibold text-white">${r.nombres} ${r.apellido_paterno}</td>
-            <td class="p-3 font-mono text-blue-400">${r.curp}</td>
-            <td class="p-3">${r.seccion}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-xs border ${stClass}">${r.estado_revision} (${r.indice_confianza}%)</span></td>
-            <td class="p-3"><button onclick="verEvidencia('${r.url_evidencia}')" class="bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/50 text-blue-300 px-2 py-1 rounded text-xs transition-all"><i class="bi bi-eye"></i></button></td>
+        cuerpoTabla.innerHTML += `
+          <tr class="hover:bg-blue-950/20 transition-colors border-b border-slate-800/50">
+            <td class="p-3 font-semibold text-white">${reg.nombres || ''} ${reg.apellido_paterno || ''}</td>
+            <td class="p-3 font-mono text-blue-400">${reg.curp || ''}</td>
+            <td class="p-3">${reg.seccion || '0'}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-xs border ${claseEstilo}">${reg.estado_revision} (${reg.indice_confianza || 100}%)</span></td>
+            <td class="p-3"><button onclick="window.open('${reg.url_evidencia || '#'}','_blank')" class="bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/50 text-blue-300 px-2 py-1 rounded text-xs transition-all"><i class="bi bi-eye"></i></button></td>
           </tr>
         `;
       });
 
       document.getElementById('statTotal').textContent = data.length;
-      document.getElementById('statRevision').textContent = revCount;
-      document.getElementById('statPromedio').textContent = data.length ? Math.round(confSuma / data.length) + '%' : '0%';
+      document.getElementById('statRevision').textContent = contadorRevision;
+      document.getElementById('statPromedio').textContent = data.length ? Math.round(sumaConfianza / data.length) + '%' : '0%';
     }
 
-    window.verEvidencia = (url) => {
-      document.getElementById('imgModalEvidencia').src = url;
-      document.getElementById('evidenciaModal').classList.remove('hidden');
-    };
-    window.cerrarModal = () => document.getElementById('evidenciaModal').classList.add('hidden');
+    // --- GUARDADO MANUAL HACIA SUPABASE ---
+    document.getElementById('btnGuardar').onclick = async () => {
+      const payload = {
+        nombres: document.getElementById('nombres').value.toUpperCase(),
+        apellido_paterno: document.getElementById('apellido_paterno').value.toUpperCase(),
+        apellido_materno: document.getElementById('apellido_materno').value.toUpperCase(),
+        curp: document.getElementById('curp').value.replace(/\s+/g, '').toUpperCase(),
+        clave_elector: document.getElementById('clave_elector').value.replace(/\s+/g, '').toUpperCase(),
+        seccion: parseInt(document.getElementById('seccion').value) || null,
+        estado: document.getElementById('estado').value.toUpperCase(),
+        direccion: document.getElementById('direccion').value.toUpperCase(),
+        estado_revision: 'PENDIENTE',
+        indice_confianza: 90
+      };
 
-    document.getElementById('btnBuscar').onclick = fetchTableData;
-    setTimeout(fetchTableData, 600);
+      const { error } = await supabaseClient.from('registros_ine').insert([payload]);
+      if (error) {
+        alert("Fallo al guardar registro: " + error.message);
+      } else {
+        alert("¡Registro guardado en Supabase exitosamente!");
+        document.getElementById('btnLimpiar').click();
+        cargarHistorialDesdeSupabase();
+      }
+    };
+
+    // Inicialización de arranque
+    verificarAutenticacion();
   </script>
 </body>
 </html>
