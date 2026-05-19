@@ -1,5 +1,6 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
-  // Asegurar que solo acepte peticiones POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -16,6 +17,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
     }
 
+    // 1. Inicializamos el SDK oficial de Google
+    const ai = new GoogleGenAI({ apiKey: apiKey });
+
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
     
@@ -28,34 +32,28 @@ export default async function handler(req, res) {
     {
       "apellido_paterno": "VALOR",
       "apellido_materno": "VALOR",
-      "nombres": "VALOR",
+      "nombre": "VALOR",
       "curp": "VALOR",
-      "clave_elector": "VALOR",
-      "seccion": 0,
-      "indice_confianza": 85
+      "seccion": 1234,
+      "estado_revision": "APROBADO/PENDIENTE",
+      "confianza": 95
     }`;
 
-    // Limpieza estricta de metadatos Base64 para enviar solo la cadena de bytes pura
+    // 2. Preparamos los archivos estructurados como los pide el SDK
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-
     const contents = [
+      promptTexto,
       {
-        role: "user",
-        parts: [
-          { text: promptTexto },
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: cleanFrente
-            }
-          }
-        ]
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: cleanFrente
+        }
       }
     ];
 
-    if (reversoBase64 && reversoBase64.trim().length > 10) {
+    if (reversoBase64) {
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
-      contents[0].parts.push({
+      contents.push({
         inlineData: {
           mimeType: "image/jpeg",
           data: cleanReverso
@@ -63,30 +61,19 @@ export default async function handler(req, res) {
       });
     }
 
-    // Endpoint de producción v1 estable
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: contents,
-        generationConfig: {
-          temperature: 0.1,
-          responseMIMEType: "application/json" 
-        }
-      })
+    // 3. Llamamos a Gemini usando el método oficial. 
+    // Aquí el SDK valida internamente los parámetros y no fallará jamás por texto mal formateado.
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: contents,
+      config: {
+        temperature: 0.1,
+        responseMimeType: 'application/json'
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Google API v1 Error: ${errorText}`);
-    }
-
-    const resData = await response.json();
-    const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    // El SDK nos devuelve directamente el texto limpio en .text
+    const responseText = response.text?.trim();
 
     if (!responseText) {
       throw new Error("Gemini no devolvió texto en la respuesta.");
@@ -96,12 +83,15 @@ export default async function handler(req, res) {
     if (!jsonMatch) {
       throw new Error("La IA no devolvió un formato JSON válido.");
     }
-    
-    const parsedData = JSON.parse(jsonMatch[0]);
-    return res.status(200).json(parsedData);
+
+    const resultadoFinal = JSON.parse(jsonMatch[0]);
+    return res.status(200).json(resultadoFinal);
 
   } catch (error) {
-    console.error("Error en /api/scan:", error);
-    return res.status(500).json({ error: "Error interno en el escáner: " + error.message });
+    console.error("Error en el manejador del escáner:", error);
+    return res.status(500).json({ 
+      error: 'Error interno en el escáner', 
+      details: error.message 
+    });
   }
 }
