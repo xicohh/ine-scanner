@@ -10,14 +10,13 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Extraemos tanto el frente como el reverso enviados por el frontend
     const { imageBase64, reversoBase64 } = req.body; 
 
     if (!imageBase64) {
       return res.status(400).json({ error: 'No se recibió ninguna imagen base64 del frente' });
     }
 
-    // Construimos dinámicamente el contenido para el mensaje de Groq
+    // Construimos el contenido inicial con el Frente
     const contenidoMensaje = [
       { 
         type: "text", 
@@ -29,24 +28,19 @@ module.exports = async function handler(req, res) {
         2. "seccion" debe ser estrictamente un NÚMERO entero (ej: 1234).
         3. Remueve espacios intermedios en CURP y Clave de Elector.
         4. "sexo" debe ser estrictamente una sola letra: "H" o "M".
-        5. Devuelve una estimación numérica del porcentaje de legibilidad/certeza en "confianza_estimada" (un entero entre 0 y 100).
         
-        ESTRUCTURA JSON REQUERIDA (Usa exactamente estos campos, si no encuentras alguno ponlo como cadena vacía o nulo):
+        ESTRUCTURA JSON REQUERIDA:
         {
-          "apellido_paterno": "RODRIGUEZ",
-          "apellido_materno": "LOPEZ",
-          "nombres": "JUAN CARLOS",
-          "curp": "ROLJ940518HDFRNS03",
-          "clave_elector": "ROLJ94051814M300",
-          "fecha_nacimiento": "18/05/1994",
-          "seccion": 2594,
-          "sexo": "H",
-          "estado": "JALISCO",
-          "direccion": "AV CENTRAL 123 COL CENTRO GUADALAJARA JAL",
-          "cic": "14341218",
-          "ocr_identificador": "14341218MEX",
-          "codigo_barras": "IIMEX2594626880<<2467137073815",
-          "confianza_estimada": 83
+          "apellido_paterno": "VALOR",
+          "apellido_materno": "VALOR",
+          "nombres": "VALOR",
+          "curp": "VALOR",
+          "clave_elector": "VALOR",
+          "fecha_nacimiento": "VALOR",
+          "seccion": 1234,
+          "sexo": "M",
+          "estado": "VALOR",
+          "direccion": "VALOR"
         }`
       },
       {
@@ -55,15 +49,15 @@ module.exports = async function handler(req, res) {
       }
     ];
 
-    // Si el frontend mandó el reverso, se lo inyectamos al arreglo de imágenes de Groq
-    if (reversoBase64) {
+    // Inyectamos el reverso SOLO si el usuario realmente subió un archivo atrás
+    if (reversoBase64 && reversoBase64.trim() !== "") {
       contenidoMensaje.push({
         type: "image_url",
         image_url: { url: `data:image/jpeg;base64,${reversoBase64}` }
       });
     }
 
-    // Ejecutamos la llamada al modelo de visión de Groq
+    // Llamada al modelo de Groq Cloud
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -77,19 +71,17 @@ module.exports = async function handler(req, res) {
 
     const responseText = chatCompletion.choices[0].message.content;
 
-    // Limpiamos posibles bloques de marcado markdown (\`\`\`json ... \`\`\`) que a veces añade el modelo
+    // Limpiamos marcas de bloques markdown que la IA suele poner automáticamente
     const cleanJSON = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-    // Parseamos la respuesta para garantizar que mandamos un objeto estructurado
     const parsedData = JSON.parse(cleanJSON);
 
-    // Retornamos exitosamente los datos limpios al cliente
+    // Mandamos la respuesta final estructurada al frontend
     return res.status(200).json(parsedData);
 
   } catch (error) {
-    console.error("Error crítico en el backend /api/scan:", error);
+    console.error("Error crítico en backend:", error);
     return res.status(500).json({ 
-      error: "Error interno al procesar con Groq", 
+      error: "Error interno en el servidor de escaneo", 
       details: error.message 
     });
   }
