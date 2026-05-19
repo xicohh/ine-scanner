@@ -157,7 +157,7 @@
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
-    // CORREGIDO: Usamos supabaseClient para que no choque con la palabra reservada de la librería
+    // CORREGIDO: Se cambia el nombre a supabaseClient para evitar colisiones con la CDN
     const supabaseClient = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentFileBlob = null;
@@ -166,7 +166,6 @@
 
     // Proteger ruta de sesión
     async function checkUser() {
-      // Usando el cliente correcto
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) window.location.href = "login.html";
     }
