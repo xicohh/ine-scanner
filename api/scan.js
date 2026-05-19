@@ -32,8 +32,9 @@ export default async function handler(req, res) {
     {
       "apellido_paterno": "VALOR",
       "apellido_materno": "VALOR",
-      "nombre": "VALOR",
+      "nombres": "VALOR",
       "curp": "VALOR",
+      "clave_elector": "VALOR",
       "seccion": 1234,
       "estado_revision": "APROBADO/PENDIENTE",
       "confianza": 95
@@ -79,12 +80,17 @@ export default async function handler(req, res) {
       throw new Error("Gemini no devolvió texto en la respuesta.");
     }
 
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("La IA no devolvió un formato JSON válido.");
+    // Parseo directo optimizado
+    let resultadoFinal;
+    try {
+      resultadoFinal = JSON.parse(responseText);
+    } catch (parseError) {
+      // Safe fallback por si acaso incluye bloques de marcado ```json
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("La IA no devolvió un formato JSON válido.");
+      resultadoFinal = JSON.parse(jsonMatch[0]);
     }
 
-    const resultadoFinal = JSON.parse(jsonMatch[0]);
     return res.status(200).json(resultadoFinal);
 
   } catch (error) {
