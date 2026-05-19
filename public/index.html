@@ -158,7 +158,7 @@
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
     
     // Configuración correcta usando el cliente local independiente
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentFileBlob = null;
     let base64String = "";
