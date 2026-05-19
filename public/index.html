@@ -18,134 +18,83 @@
       <i class="bi bi-fingerprint text-blue-500 text-2xl animate-pulse"></i>
       <span class="text-xl font-bold tracking-wider text-white">IDentifica <span class="text-blue-500 text-sm font-medium">| INE Scanner</span></span>
     </div>
-    <button type="button" id="btnLogOut" class="text-slate-400 hover:text-rose-400 transition-colors flex items-center space-x-1 text-sm bg-slate-800/40 px-3 py-1.5 rounded-lg border border-slate-700/50">
+    <button type="button" id="btnLogOut" class="text-slate-400 hover:text-red-400 transition-colors flex items-center space-x-2 text-sm bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800">
       <i class="bi bi-box-arrow-right"></i>
-      <span>Salir</span>
+      <span>Cerrar Sesión</span>
     </button>
   </nav>
 
-  <main class="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <main class="flex-1 p-6 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
     
-    <div class="lg:col-span-5 flex flex-col space-y-6">
+    <div class="lg:col-span-2 space-y-6">
       
-      <div class="bg-[#111827] border border-blue-900/30 rounded-2xl p-5 shadow-xl">
-        <h2 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
-          <i class="bi bi-camera text-blue-400"></i>
-          <span>Captura de Documento (Ambas Caras)</span>
+      <div class="bg-[#111827] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+          <i class="bi bi-camera text-blue-500"></i>
+          <span>Carga de Documento (INE)</span>
         </h2>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          
-          <div class="border border-slate-800 bg-slate-950/50 rounded-xl p-3 text-center flex flex-col justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Frente (Anverso)</span>
-            <div id="dropzoneFrente" class="border-2 border-dashed border-blue-900/50 hover:border-blue-500/70 bg-slate-900/40 rounded-lg p-4 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px]" onclick="document.getElementById('fileFrente').click()">
-              <div id="previewFrente" class="text-slate-400 flex flex-col items-center">
-                <i class="bi bi-card-image text-2xl text-blue-500/70 mb-1"></i>
-                <span class="text-xs">Subir Frente</span>
-              </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="dropZoneFrente" class="border-2 border-dashed border-slate-700 hover:border-blue-500/50 bg-slate-900/40 rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden group">
+            <img id="imgPreviewFrente" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Vista previa frente">
+            <div class="space-y-2 group-hover:scale-105 transition-transform">
+              <i class="bi bi-image text-3xl text-slate-500"></i>
+              <p class="text-xs text-slate-400 font-medium">Arrastra o Selecciona el <span class="text-blue-400 font-bold">FRENTE (Anverso)</span></p>
             </div>
-            <input type="file" id="fileFrente" accept="image/*" class="hidden" onchange="manejarSeleccionImagen(this, 'Frente')">
-            <input type="hidden" id="base64Frente">
+            <input type="file" id="fileInputFrente" accept="image/*" class="hidden">
           </div>
 
-          <div class="border border-slate-800 bg-slate-950/50 rounded-xl p-3 text-center flex flex-col justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Reverso (Atrás)</span>
-            <div id="dropzoneReverso" class="border-2 border-dashed border-slate-700/40 hover:border-blue-500/70 bg-slate-900/40 rounded-lg p-4 cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px]" onclick="document.getElementById('fileReverso').click()">
-              <div id="previewReverso" class="text-slate-400 flex flex-col items-center">
-                <i class="bi bi-credit-card-2-back text-2xl text-slate-500 mb-1"></i>
-                <span class="text-xs">Subir Reverso</span>
-              </div>
+          <div id="dropZoneReverso" class="border-2 border-dashed border-slate-700 hover:border-blue-500/50 bg-slate-900/40 rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden group">
+            <img id="imgPreviewReverso" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Vista previa reverso">
+            <div class="space-y-2 group-hover:scale-105 transition-transform">
+              <i class="bi bi-image text-3xl text-slate-500"></i>
+              <p class="text-xs text-slate-400 font-medium">Arrastra o Selecciona el <span class="text-blue-400 font-bold">REVERSO (Atrás)</span></p>
             </div>
-            <input type="file" id="fileReverso" accept="image/*" class="hidden" onchange="manejarSeleccionImagen(this, 'Reverso')">
-            <input type="hidden" id="base64Reverso">
+            <input type="file" id="fileInputReverso" accept="image/*" class="hidden">
           </div>
-
         </div>
 
-        <button type="button" id="btnScan" onclick="procesarCredencialConIA()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
+        <button type="button" id="btnProcesar" class="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/30 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2">
           <i class="bi bi-cpu"></i>
-          <span>Procesar con Groq Vision</span>
+          <span>Procesar con Groq</span>
         </button>
       </div>
 
-      <div class="grid grid-cols-3 gap-4">
-        <div class="bg-[#111827] border border-blue-900/20 rounded-xl p-4 text-center shadow-md">
-          <div class="text-xs text-slate-400 font-medium">Total Escaneos</div>
-          <div id="statTotal" class="text-2xl font-black text-white mt-1">0</div>
+      <form id="formDatos" class="bg-[#111827] border border-slate-800/80 rounded-2xl p-6 shadow-xl grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <h2 class="text-lg font-semibold text-white mb-2 flex items-center space-x-2">
+            <i class="bi bi-file-earmark-text text-blue-500"></i>
+            <span>Datos Extraídos del OCR</span>
+          </h2>
         </div>
-        <div class="bg-[#111827] border border-blue-900/20 rounded-xl p-4 text-center shadow-md">
-          <div class="text-xs text-slate-400 font-medium">En Revisión</div>
-          <div id="statRevision" class="text-2xl font-black text-amber-400 mt-1">0</div>
-        </div>
-        <div class="bg-[#111827] border border-blue-900/20 rounded-xl p-4 text-center shadow-md">
-          <div class="text-xs text-slate-400 font-medium">Confianza Avg</div>
-          <div id="statPromedio" class="text-2xl font-black text-emerald-400 mt-1">0%</div>
-        </div>
-      </div>
 
-    </div>
-
-    <div class="lg:col-span-7 bg-[#111827] border border-blue-900/30 rounded-2xl p-6 shadow-xl">
-      <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-3">
-        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-          <i class="bi bi-file-earmark-text text-blue-400"></i>
-          <span>Datos Extraídos del Elector</span>
-        </h2>
-      </div>
-
-      <form id="registroForm" onsubmit="guardarEnSupabase(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nombre(s)</label>
-          <input type="text" id="nombres" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nombres</label>
+          <input type="text" id="nombres" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Ap. Paterno</label>
-            <input type="text" id="apellido_paterno" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Ap. Materno</label>
-            <input type="text" id="apellido_materno" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-          </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Apellido Paterno</label>
+          <input type="text" id="apellido_paterno" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Apellido Materno</label>
+          <input type="text" id="apellido_materno" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">CURP</label>
-          <input type="text" id="curp" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500">
+          <input type="text" id="curp" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500 transition-colors">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Clave de Elector</label>
-          <input type="text" id="clave_elector" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500">
+          <input type="text" id="clave_elector" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-blue-500 transition-colors">
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="col-span-2">
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fecha Nacimiento</label>
-            <input type="text" id="fecha_nacimiento" placeholder="DD/MM/AAAA" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sección</label>
-            <input type="number" id="seccion" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sexo</label>
-            <input type="text" id="sexo" placeholder="H/M" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-blue-500">
-          </div>
-          <div class="col-span-2">
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Estado</label>
-            <input type="text" id="estado" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-          </div>
-        </div>
-        <div class="sm:col-span-2">
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Dirección Completa</label>
-          <input type="text" id="direccion" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sección</label>
+          <input type="number" id="seccion" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
         </div>
 
-        <div class="sm:col-span-2 mt-4 pt-4 border-t border-slate-800 flex space-x-3">
-          <button type="button" onclick="limpiarPantallaCompleta()" class="bg-slate-950 hover:bg-slate-900 text-slate-400 border border-slate-800 font-medium py-2.5 px-4 rounded-xl transition-colors">
-            Limpiar
-          </button>
-          <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center space-x-2">
+        <div class="md:col-span-2 pt-2">
+          <button type="submit" id="btnGuardar" disabled class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 disabled:cursor-not-allowed border border-emerald-500/20 text-white font-semibold py-2.5 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2">
             <i class="bi bi-cloud-arrow-up"></i>
             <span>Guardar Registro en Base de Datos</span>
           </button>
@@ -153,215 +102,304 @@
       </form>
     </div>
 
-  </main>
+    <div class="space-y-6">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-[#111827] border border-slate-800/60 rounded-xl p-3 text-center">
+          <div class="text-xs font-semibold text-slate-400">Total</div>
+          <div id="statTotal" class="text-xl font-bold text-white mt-0.5">0</div>
+        </div>
+        <div class="bg-[#111827] border border-slate-800/60 rounded-xl p-3 text-center">
+          <div class="text-xs font-semibold text-slate-400">Pendientes</div>
+          <div id="statRevision" class="text-xl font-bold text-amber-500 mt-0.5">0</div>
+        </div>
+        <div class="bg-[#111827] border border-slate-800/60 rounded-xl p-3 text-center">
+          <div class="text-xs font-semibold text-slate-400">Confianza</div>
+          <div id="statPromedio" class="text-xl font-bold text-blue-400 mt-0.5">0%</div>
+        </div>
+      </div>
 
-  <section class="max-w-7xl mx-auto w-full px-6 pb-8 mt-4">
-    <div class="bg-[#111827] border border-blue-900/20 rounded-2xl p-5 shadow-xl">
-      <h3 class="text-md font-bold text-white mb-4 flex items-center space-x-2">
-        <i class="bi bi-database text-blue-400"></i>
-        <span>Últimas Credenciales Almacenadas</span>
-      </h3>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider bg-slate-950/40">
-              <th class="p-3">Elector</th>
-              <th class="p-3">CURP</th>
-              <th class="p-3">Sección</th>
-              <th class="p-3">Estado Revisión</th>
-            </tr>
-          </thead>
-          <tbody id="tablaRegistros" class="text-sm divide-y divide-slate-800/60"></tbody>
-        </table>
+      <div class="bg-[#111827] border border-slate-800/80 rounded-2xl p-4 shadow-xl flex flex-col h-[480px]">
+        <h2 class="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
+          <i class="bi bi-clock-history text-blue-500"></i>
+          <span>Historial de Escaneos</span>
+        </h2>
+        
+        <div class="relative mb-3">
+          <i class="bi bi-search absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+          <input type="text" id="filterQuery" placeholder="Buscar por Nombre o CURP..." class="w-full bg-slate-900 text-xs border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+        </div>
+
+        <div class="flex-1 overflow-y-auto border border-slate-800/40 rounded-xl bg-slate-950/40">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-900 border-b border-slate-800 text-slate-400 font-medium">
+                <th class="p-2.5">Ciudadano</th>
+                <th class="p-2.5">CURP</th>
+                <th class="p-2.5">Sec</th>
+                <th class="p-2.5">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaRegistros" class="text-slate-300 divide-y divide-slate-900">
+              </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </section>
+  </main>
 
   <script>
     const SUPABASE_URL = "https://nlgriqiaxltgdqxurggp.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Cvc9vhpOq4ni8mCHWM3ITA_TMBBqAiU";
-    
-    const supabaseClient = window.supabaseJs ? window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY) : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Muestra la vista previa del archivo cargado
-    function manejarSeleccionImagen(input, tipo) {
-      const file = input.files[0];
-      if (!file) return;
+    let fileBlobFrente = null;
+    let fileBlobReverso = null;
+    let base64Frente = "";
+    let base64Reverso = "";
+    let jsonExtraidoActual = null;
 
-      const lector = new FileReader();
-      lector.onload = function(e) {
-        document.getElementById(`base64${tipo}`).value = e.target.result;
-        const cajaPreview = document.getElementById(`preview${tipo}`);
-        cajaPreview.innerHTML = `
-          <img src="${e.target.result}" class="mx-auto h-24 object-contain rounded-lg shadow-md mb-1 border border-slate-700">
-          <span class="text-[10px] text-emerald-400 font-mono block">✓ Listo</span>
-        `;
-      };
-      lector.readAsDataURL(file);
-    }
-
-    // Comprime la imagen para evitar el error 413
-    function redimensionarYComprimir(base64Original, anchoMaximo = 1000) {
-      return new Promise((resolve) => {
-        const imagenObjeto = new Image();
-        imagenObjeto.src = base64Original;
-        imagenObjeto.onload = () => {
-          const lienzoCanvas = document.createElement('canvas');
-          let nuevoAncho = imagenObjeto.width;
-          let nuevoAlto = imagenObjeto.height;
-
-          if (imagenObjeto.width > anchoMaximo) {
-            const factorEscala = anchoMaximo / imagenObjeto.width;
-            nuevoAncho = anchoMaximo;
-            nuevoAlto = imagenObjeto.height * factorEscala;
-          }
-
-          lienzoCanvas.width = nuevoAncho;
-          lienzoCanvas.height = nuevoAlto;
-          const contexto = lienzoCanvas.getContext('2d');
-          contexto.drawImage(imagenObjeto, 0, 0, nuevoAncho, nuevoAlto);
-          
-          const dataUrlComprimido = lienzoCanvas.toDataURL('image/jpeg', 0.60);
-          resolve(dataUrlComprimido.split(',')[1]);
-        };
-      });
-    }
-
-    // Procesa las dos caras al mismo tiempo enviándolas a Vercel
-    async function procesarCredencialConIA() {
-      const botonEscanear = document.getElementById('btnScan');
-      const stringFrente = document.getElementById('base64Frente').value;
-      const stringReverso = document.getElementById('base64Reverso').value;
-
-      if (!stringFrente) {
-        alert("⚠️ Carga al menos la imagen del Frente para procesar.");
-        return;
-      }
-
-      botonEscanear.disabled = true;
-      botonEscanear.innerHTML = `<i class="bi bi-hourglass-split animate-spin"></i> <span>Escaneando ambas caras...</span>`;
-
-      try {
-        const frenteListo = await redimensionarYComprimir(stringFrente);
-        let reversoListo = null;
-        if (stringReverso) {
-          reversoListo = await redimensionarYComprimir(stringReverso);
-        }
-
-        const respuestaServidor = await fetch('/api/scan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: frenteListo, reversoBase64: reversoListo })
-        });
-
-        if (!respuestaServidor.ok) {
-          throw new Error(`Error en el servidor Vercel: ${respuestaServidor.status}`);
-        }
-
-        const jsonResultado = await respuestaServidor.json();
-
-        // Rellenar campos
-        document.getElementById('nombres').value = jsonResultado.nombres || '';
-        document.getElementById('apellido_paterno').value = jsonResultado.apellido_paterno || '';
-        document.getElementById('apellido_materno').value = jsonResultado.apellido_materno || '';
-        document.getElementById('curp').value = jsonResultado.curp || '';
-        document.getElementById('clave_elector').value = jsonResultado.clave_elector || '';
-        document.getElementById('fecha_nacimiento').value = jsonResultado.fecha_nacimiento || '';
-        document.getElementById('seccion').value = jsonResultado.seccion || '';
-        document.getElementById('sexo').value = jsonResultado.sexo || '';
-        document.getElementById('estado').value = jsonResultado.estado || '';
-        document.getElementById('direccion').value = jsonResultado.direccion || '';
-
-        alert("🎉 ¡Extracción completada con éxito!");
-      } catch (error) {
-        console.error(error);
-        alert("❌ Error al procesar: Revisa que tu variable GROQ_API_KEY esté bien configurada en Vercel.");
-      } finally {
-        botonEscanear.disabled = false;
-        botonEscanear.innerHTML = `<i class="bi bi-cpu"></i> <span>Procesar con Groq Vision</span>`;
-      }
-    }
-
-    // Guarda los datos en Supabase de forma nativa
-    async function guardarEnSupabase(event) {
-      event.preventDefault();
-      
-      const payload = {
-        nombres: document.getElementById('nombres').value.toUpperCase(),
-        apellido_paterno: document.getElementById('apellido_paterno').value.toUpperCase(),
-        apellido_materno: document.getElementById('apellido_materno').value.toUpperCase(),
-        curp: document.getElementById('curp').value.replace(/\s+/g, '').toUpperCase(),
-        clave_elector: document.getElementById('clave_elector').value.replace(/\s+/g, '').toUpperCase(),
-        seccion: parseInt(document.getElementById('seccion').value) || null,
-        estado: document.getElementById('estado').value.toUpperCase(),
-        direccion: document.getElementById('direccion').value.toUpperCase(),
-        estado_revision: 'PENDIENTE',
-        indice_confianza: 95
-      };
-
-      const { error } = await supabaseClient.from('registros_ine').insert([payload]);
-      if (error) {
-        alert("Error al guardar: " + error.message);
-      } else {
-        alert("¡Guardado en Supabase!");
-        limpiarPantallaCompleta();
-        cargarHistorialDesdeSupabase();
-      }
-    }
-
-    function limpiarPantallaCompleta() {
-      document.getElementById('registroForm').reset();
-      document.getElementById('base64Frente').value = "";
-      document.getElementById('base64Reverso').value = "";
-      document.getElementById('previewFrente').innerHTML = `<i class="bi bi-card-image text-2xl text-blue-500/70 mb-1"></i><span class="text-xs">Subir Frente</span>`;
-      document.getElementById('previewReverso').innerHTML = `<i class="bi bi-credit-card-2-back text-2xl text-slate-500 mb-1"></i><span class="text-xs">Subir Reverso</span>`;
-    }
-
-    // Seguridad de Sesión
-    async function verificarAutenticacion() {
+    // Verificar sesión al cargar
+    window.onload = async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) {
         window.location.href = "login.html";
       } else {
-        cargarHistorialDesdeSupabase();
+        fetchTableData();
       }
-    }
+    };
 
+    // Logout
     document.getElementById('btnLogOut').onclick = async () => {
       await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     };
 
-    async function cargarHistorialDesdeSupabase() {
-      const { data, error } = await supabaseClient.from('registros_ine').select('*').order('created_at', { ascending: false });
-      if (error) return;
+    // Configuración de Carga de Archivos e Imágenes (Frente)
+    const zoneFrente = document.getElementById('dropZoneFrente');
+    const inputFrente = document.getElementById('fileInputFrente');
+    zoneFrente.onclick = () => inputFrente.click();
+    zoneFrente.ondragover = (e) => { e.preventDefault(); zoneFrente.classList.add('border-blue-500', 'bg-blue-950/20'); };
+    zoneFrente.ondragleave = () => zoneFrente.classList.remove('border-blue-500', 'bg-blue-950/20');
+    zoneFrente.ondrop = (e) => {
+      e.preventDefault();
+      zoneFrente.classList.remove('border-blue-500', 'bg-blue-950/20');
+      if (e.dataTransfer.files && e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0], 'frente');
+    };
+    inputFrente.onchange = (e) => { if (e.target.files && e.target.files.length) loadFile(e.target.files[0], 'frente'); };
 
-      const cuerpoTabla = document.getElementById('tablaRegistros');
-      cuerpoTabla.innerHTML = "";
-      let contadorRevision = 0;
-      let sumaConfianza = 0;
+    // Configuración de Carga de Archivos e Imágenes (Reverso)
+    const zoneReverso = document.getElementById('dropZoneReverso');
+    const inputReverso = document.getElementById('fileInputReverso');
+    zoneReverso.onclick = () => inputReverso.click();
+    zoneReverso.ondragover = (e) => { e.preventDefault(); zoneReverso.classList.add('border-blue-500', 'bg-blue-950/20'); };
+    zoneReverso.ondragleave = () => zoneReverso.classList.remove('border-blue-500', 'bg-blue-950/20');
+    zoneReverso.ondrop = (e) => {
+      e.preventDefault();
+      zoneReverso.classList.remove('border-blue-500', 'bg-blue-950/20');
+      if (e.dataTransfer.files && e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0], 'reverso');
+    };
+    inputReverso.onchange = (e) => { if (e.target.files && e.target.files.length) loadFile(e.target.files[0], 'reverso'); };
 
-      data.forEach(reg => {
-        if (reg.estado_revision === 'PENDIENTE') contadorRevision++;
-        sumaConfianza += (reg.indice_confianza || 0);
-        const claseEstilo = reg.estado_revision === 'APROBADO' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-amber-950 text-amber-400 border-amber-800';
-        
-        cuerpoTabla.innerHTML += `
-          <tr class="border-b border-slate-800/50">
-            <td class="p-3 font-semibold text-white">${reg.nombres || ''} ${reg.apellido_paterno || ''}</td>
-            <td class="p-3 font-mono text-blue-400">${reg.curp || ''}</td>
-            <td class="p-3">${reg.seccion || '0'}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-xs border ${claseEstilo}">${reg.estado_revision}</span></td>
-          </tr>
-        `;
-      });
-
-      document.getElementById('statTotal').textContent = data.length;
-      document.getElementById('statRevision').textContent = contadorRevision;
-      document.getElementById('statPromedio').textContent = data.length ? Math.round(sumaConfianza / data.length) + '%' : '0%';
+    function loadFile(file, side) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target && e.target.result) {
+          const base64 = e.target.result.split(',')[1] || "";
+          if (side === 'frente') {
+            fileBlobFrente = file;
+            base64Frente = base64;
+            document.getElementById('imgPreviewFrente').src = e.target.result;
+            document.getElementById('imgPreviewFrente').classList.remove('hidden');
+            if(zoneFrente.querySelector('i')) zoneFrente.querySelector('i').classList.add('hidden');
+            if(zoneFrente.querySelector('p')) zoneFrente.querySelector('p').classList.add('hidden');
+          } else {
+            fileBlobReverso = file;
+            base64Reverso = base64;
+            document.getElementById('imgPreviewReverso').src = e.target.result;
+            document.getElementById('imgPreviewReverso').classList.remove('hidden');
+            if(zoneReverso.querySelector('i')) zoneReverso.querySelector('i').classList.add('hidden');
+            if(zoneReverso.querySelector('p')) zoneReverso.querySelector('p').classList.add('hidden');
+          }
+        }
+      };
+      reader.readAsDataURL(file);
     }
 
-    verificarAutenticacion();
+    // Petición al Backend /api/scan con Groq
+    document.getElementById('btnProcesar').onclick = async () => {
+      if (!base64Frente) return alert("Debes seleccionar al menos la imagen del Frente para procesar.");
+      
+      const btn = document.getElementById('btnProcesar');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="bi bi-arrow-clockwise animate-spin"></i> Analizando con Llama Vision...`;
+
+      try {
+        const response = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            imageBase64: base64Frente,
+            reversoBase64: base64Reverso 
+          })
+        });
+
+        const resultado = await response.json();
+        if (!response.ok) throw new Error(resultado.error || "Error desconocido del backend");
+
+        jsonExtraidoActual = resultado;
+
+        // Auto-completar inputs del formulario
+        document.getElementById('nombres').value = resultado.nombres || '';
+        document.getElementById('apellido_paterno').value = resultado.apellido_paterno || '';
+        document.getElementById('apellido_materno').value = resultado.apellido_materno || '';
+        document.getElementById('curp').value = resultado.curp || '';
+        document.getElementById('clave_elector').value = resultado.clave_elector || '';
+        document.getElementById('seccion').value = resultado.seccion || 0;
+
+        // Activar el botón de guardar
+        document.getElementById('btnGuardar').disabled = false;
+
+      } catch (err) {
+        alert("Error de procesamiento: " + err.message);
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-cpu"></i> Procesar con Groq`;
+      }
+    };
+
+    // Guardar en Supabase Database + Storage
+    document.getElementById('formDatos').onsubmit = async (e) => {
+      e.preventDefault();
+      const btnSave = document.getElementById('btnGuardar');
+      btnSave.disabled = true;
+      btnSave.innerHTML = `<i class="bi bi-arrow-clockwise animate-spin"></i> Guardando...`;
+
+      try {
+        let urlPublica = "";
+
+        if (fileBlobFrente) {
+          const fileExt = fileBlobFrente.name.split('.').pop();
+          const fileName = `${Date.now()}_frente.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('imagenes_ine')
+            .upload(fileName, fileBlobFrente);
+
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabaseClient.storage
+            .from('imagenes_ine')
+            .getPublicUrl(fileName);
+            
+          urlPublica = urlData.publicUrl;
+        }
+
+        // Insertar en registros_ine
+        const { error: insertError } = await supabaseClient.from('registros_ine').insert([{
+          nombres: document.getElementById('nombres').value.trim(),
+          apellido_paterno: document.getElementById('apellido_paterno').value.trim(),
+          apellido_materno: document.getElementById('apellido_materno').value.trim(),
+          curp: document.getElementById('curp').value.trim(),
+          clave_elector: document.getElementById('clave_elector').value.trim(),
+          seccion: parseInt(document.getElementById('seccion').value) || 0,
+          estado_revision: (jsonExtraidoActual && jsonExtraidoActual.confianza_estimada >= 85) ? 'APROBADO' : 'PENDIENTE',
+          indice_confianza: jsonExtraidoActual ? jsonExtraidoActual.confianza_estimada : 70,
+          url_evidencia: urlPublica
+        }]);
+
+        if (insertError) throw insertError;
+
+        alert("¡Registro e imagen guardados exitosamente!");
+        
+        // Resetear Formulario e Interfaz
+        document.getElementById('formDatos').reset();
+        document.getElementById('imgPreviewFrente').classList.add('hidden');
+        document.getElementById('imgPreviewReverso').classList.add('hidden');
+        zoneFrente.querySelectorAll('i, p').forEach(el => el.classList.remove('hidden'));
+        zoneReverso.querySelectorAll('i, p').forEach(el => el.classList.remove('hidden'));
+        
+        base64Frente = ""; base64Reverso = ""; fileBlobFrente = null; fileBlobReverso = null;
+        btnSave.disabled = true;
+
+        fetchTableData();
+
+      } catch (err) {
+        alert("Error al guardar: " + err.message);
+        btnSave.disabled = false;
+      } finally {
+        btnSave.innerHTML = `<i class="bi bi-cloud-arrow-up"></i> Guardar Registro en Base de Datos`;
+      }
+    };
+
+    // Buscador en Tiempo Real
+    document.getElementById('filterQuery').oninput = () => fetchTableData();
+
+    // FUNCIÓN DE HISTORIAL CORREGIDA Y ANTIRROTURA
+    async function fetchTableData() {
+      try {
+        const filterInput = document.getElementById('filterQuery');
+        const q = filterInput ? filterInput.value.trim() : '';
+        
+        let query = supabaseClient.from('registros_ine').select('*');
+        
+        if (q) {
+          query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
+        }
+
+        const { data, error } = await query.order('created_at', { ascending: false });
+        if (error) throw error;
+
+        const cuerpoTabla = document.getElementById('tablaRegistros');
+        if (!cuerpoTabla) return;
+        
+        cuerpoTabla.innerHTML = "";
+        let contadorRevision = 0;
+        let sumaConfianza = 0;
+
+        data.forEach(reg => {
+          // Filtrado de valores nulos o indefinidos para evitar fallos catastróficos en la renderización
+          const nombresVal = reg.nombres || '';
+          const paternoVal = reg.apellido_paterno || '';
+          const maternoVal = reg.apellido_materno || '';
+          const nombreCompleto = `${nombresVal} ${paternoVal} ${maternoVal}`.trim() || 'SIN NOMBRE';
+          
+          const curpVal = reg.curp || 'SIN CURP';
+          const seccionVal = reg.seccion || '0';
+          const confianzaVal = reg.indice_confianza || 0;
+          const estadoRev = reg.estado_revision || 'PENDIENTE';
+
+          if (estadoRev === 'PENDIENTE') contadorRevision++;
+          sumaConfianza += confianzaVal;
+
+          const claseEstilo = estadoRev === 'APROBADO' 
+            ? 'bg-emerald-950 text-emerald-400 border-emerald-800' 
+            : 'bg-amber-950 text-amber-400 border-amber-800';
+          
+          cuerpoTabla.innerHTML += `
+            <tr class="border-b border-slate-800/50 hover:bg-blue-950/20 transition-all">
+              <td class="p-2.5 font-semibold text-white max-w-[120px] truncate" title="${nombreCompleto}">${nombreCompleto}</td>
+              <td class="p-2.5 font-mono text-blue-400 uppercase">${curpVal}</td>
+              <td class="p-2.5">${seccionVal}</td>
+              <td class="p-2.5">
+                <span class="px-1.5 py-0.5 rounded text-[10px] border ${claseEstilo}">
+                  ${estadoRev}
+                </span>
+              </td>
+            </tr>
+          `;
+        });
+
+        // Actualizar estadísticas superiores de manera segura
+        if(document.getElementById('statTotal')) document.getElementById('statTotal').textContent = data.length;
+        if(document.getElementById('statRevision')) document.getElementById('statRevision').textContent = contadorRevision;
+        if(document.getElementById('statPromedio')) document.getElementById('statPromedio').textContent = data.length ? Math.round(sumaConfianza / data.length) + '%' : '0%';
+
+      } catch (err) {
+        console.error("Error crítico al renderizar la tabla de historial:", err);
+      }
+    }
   </script>
 </body>
 </html>
