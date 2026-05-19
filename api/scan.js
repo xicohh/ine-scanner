@@ -15,14 +15,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
     }
 
-    // Prompt configurado con las propiedades exactas que tu index.html necesita leer
+    // Le exigimos el formato JSON directamente en el prompt de forma ultra-estricta
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
     
+    IMPORTANTE: Responde ÚNICAMENTE con un objeto JSON válido, plano, sin usar bloques de código markdown (no uses \`\`\`json ni \`\`\`).
+    
     REGLAS DE ORO:
-    1. Responde ÚNICAMENTE con el objeto JSON solicitado. No agregues introducciones, explicaciones ni bloques Markdown.
-    2. Si un campo no es legible o no viene, devuélvelo como una cadena vacía "" (o 0 para la sección).
-    3. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
+    1. Si un campo no es legible o no viene, devuélvelo como una cadena vacía "" (o 0 para la sección).
+    2. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
 
     Estructura exacta del JSON que debes devolver:
     {
@@ -38,7 +39,6 @@ export default async function handler(req, res) {
 
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
     
-    // Payload con la estructura de objetos nativos en partes
     const contents = [
       {
         parts: [
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Endpoint directo v1
+    // Endpoint directo v1 estable
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -73,9 +73,9 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         contents: contents,
+        // Quitamos generationConfig por completo para evitar errores de nombres desconocidos
         generationConfig: {
-          temperature: 0.1,
-          response_mime_type: "application/json" // <-- SOLUCIÓN: Guion bajo obligatorio para la API REST directa
+          temperature: 0.1
         }
       })
     });
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Gemini no devolvió texto en la respuesta." });
     }
 
-    // Extraemos el JSON puro por si la IA añade caracteres de adorno
+    // Expresión regular robusta para extraer el JSON pase lo que pase
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return res.status(500).json({ error: "La IA no devolvió un formato JSON válido." });
