@@ -201,18 +201,20 @@
     };
     inputReverso.onchange = (e) => { if (e.target.files && e.target.files.length) loadFile(e.target.files[0], 'reverso'); };
 
-    // Función optimizada con compresión automática integrada
+    // FUNCIÓN CORREGIDA CON COMPRESIÓN DE IMAGEN ACTIVA
     async function loadFile(file, side) {
       if (!file) return;
 
+      // Opciones de compresión: Máximo 1MB de peso y resolución óptima para el OCR
       const opciones = {
-        maxSizeMB: 1,            // Limita el archivo final a un peso máximo cercano a 1MB
-        maxWidthOrHeight: 1280,  // Redimensiona la resolución para que no consuma memoria excesiva
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1280,
         useWebWorker: true
       };
 
       try {
-        // Ejecuta la compresión en segundo plano
+        console.log(`Comprimiendo imagen de ${side}...`);
+        // Reducimos el tamaño del archivo usando la librería externa
         const archivoComprimido = await imageCompression(file, opciones);
         
         const reader = new FileReader();
@@ -220,26 +222,28 @@
           if (e.target && e.target.result) {
             const base64 = e.target.result.split(',')[1] || "";
             if (side === 'frente') {
-              fileBlobFrente = archivoComprimido; // Almacenamos el blob comprimido para subir a Storage
+              fileBlobFrente = archivoComprimido; // Guardamos el blob optimizado
               base64Frente = base64;
               document.getElementById('imgPreviewFrente').src = e.target.result;
               document.getElementById('imgPreviewFrente').classList.remove('hidden');
               if(zoneFrente.querySelector('i')) zoneFrente.querySelector('i').classList.add('hidden');
               if(zoneFrente.querySelector('p')) zoneFrente.querySelector('p').classList.add('hidden');
             } else {
-              fileBlobReverso = archivoComprimido; // Almacenamos el blob comprimido para subir a Storage
+              fileBlobReverso = archivoComprimido; // Guardamos el blob optimizado
               base64Reverso = base64;
               document.getElementById('imgPreviewReverso').src = e.target.result;
               document.getElementById('imgPreviewReverso').classList.remove('hidden');
               if(zoneReverso.querySelector('i')) zoneReverso.querySelector('i').classList.add('hidden');
               if(zoneReverso.querySelector('p')) zoneReverso.querySelector('p').classList.add('hidden');
             }
+            console.log(`¡Imagen de ${side} optimizada con éxito!`);
           }
         };
         reader.readAsDataURL(archivoComprimido);
+
       } catch (error) {
-        console.error("Error al optimizar y comprimir la imagen:", error);
-        alert("No se pudo procesar la imagen seleccionada. Intenta con un formato o archivo distinto.");
+        console.error("Error al comprimir la imagen:", error);
+        alert("No se pudo optimizar la imagen. Intenta con otra o tómala con menor resolución.");
       }
     }
 
@@ -356,7 +360,7 @@
     // Buscador en Tiempo Real
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
-    // FUNCIÓN DE HISTORIAL CONECTADA CON LA COLUMNA 'creado_en'
+    // Historial de escaneos mapeado con 'creado_en'
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
@@ -379,7 +383,6 @@
         let sumaConfianza = 0;
 
         data.forEach(reg => {
-          // Filtrado antirrotura completo
           const nombresVal = reg.nombres || '';
           const paternoVal = reg.apellido_paterno || '';
           const maternoVal = reg.apellido_materno || '';
@@ -411,7 +414,6 @@
           `;
         });
 
-        // Actualizar estadísticas superiores de manera segura
         if(document.getElementById('statTotal')) document.getElementById('statTotal').textContent = data.length;
         if(document.getElementById('statRevision')) document.getElementById('statRevision').textContent = contadorRevision;
         if(document.getElementById('statPromedio')) document.getElementById('statPromedio').textContent = data.length ? Math.round(sumaConfianza / data.length) + '%' : '0%';
