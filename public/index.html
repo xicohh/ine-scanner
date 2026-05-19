@@ -360,10 +360,12 @@
     document.getElementById('filterQuery').oninput = () => fetchTableData();
 
     // Historial de escaneos blindado contra cargas asíncronas nulas
+    // Historial de escaneos blindado contra cargas asíncronas nulas
     async function fetchTableData() {
       try {
         const filterInput = document.getElementById('filterQuery');
-        // BLINDAJE CRÍTICO: Si el input aún no existe en el DOM, asume cadena vacía
+        
+        // BLINDAJE REAL: Si filterInput existe, toma su valor; si es null, usa una cadena vacía
         const q = filterInput ? filterInput.value.trim() : '';
         
         let query = supabaseClient.from('registros_ine').select('*');
