@@ -15,7 +15,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en el servidor' });
     }
 
-    // Estructuramos el prompt para Gemini
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
     
@@ -35,7 +34,9 @@ export default async function handler(req, res) {
       "indice_confianza": 85
     }`;
 
-    // Configuramos los contenidos multimedia para la API de Gemini
+    // CORRECCIÓN AQUÍ: Se añade la propiedad data y se limpia el string de base64 si incluye metadata
+    const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
     const contents = [
       {
         role: "user",
@@ -44,24 +45,24 @@ export default async function handler(req, res) {
           {
             inlineData: {
               mimeType: "image/jpeg",
-              data: imageBase64
+              data: cleanFrente
             }
           }
         ]
       }
     ];
 
-    // Si viene la imagen de atrás, la agregamos al arreglo de partes
     if (reversoBase64 && reversoBase64.trim().length > 10) {
+      const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
       contents[0].parts.push({
         inlineData: {
           mimeType: "image/jpeg",
-          data: reversoBase64
+          data: cleanReverso
         }
       });
     }
 
-    // Llamada directa vía fetch a la API de Gemini (evita problemas de dependencias en Vercel)
+    // Usamos el endpoint oficial de la v1beta para soporte nativo de JSON configurado
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -71,7 +72,7 @@ export default async function handler(req, res) {
         contents,
         generationConfig: {
           temperature: 0.1,
-          responseMimeType: "application/json" // Obliga a Gemini a responder en JSON puro
+          responseMimeType: "application/json" 
         }
       })
     });
@@ -82,8 +83,6 @@ export default async function handler(req, res) {
     }
 
     const resData = await response.json();
-    
-    // Extraemos el texto de la respuesta de Gemini
     const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     console.log("Respuesta cruda de Gemini:", responseText);
 
@@ -91,7 +90,6 @@ export default async function handler(req, res) {
       throw new Error("Gemini no devolvió texto en la respuesta.");
     }
 
-    // Filtro de seguridad para aislar el objeto JSON
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("La IA no devolvió un formato JSON válido: " + responseText);
