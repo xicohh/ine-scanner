@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default async function handler(req, res) {
   // Asegurar método POST
@@ -18,8 +18,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
     }
 
-    // Inicializamos el SDK oficial moderno con el paquete correcto
-    const ai = new GoogleGenAI({ apiKey: apiKey });
+    // Inicializamos el SDK clásico oficial de Google
+    const genAI = new GoogleGenerativeAI(apiKey);
+    // Instanciamos el modelo apto para visión multimodal
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
     Analiza las imágenes adjuntas para extraer la información del documento.
@@ -42,13 +44,11 @@ export default async function handler(req, res) {
     }`;
 
     // --- PROCESAMIENTO DEL FRENTE ---
-    // Extraemos el tipo MIME dinámico (jpeg, png, webp) gracias al prefijo completo enviado por el frontend
     const matchFrente = imageBase64.match(/^data:(image\/\w+);base64,/);
     const mimeFrente = matchFrente ? matchFrente[1] : "image/jpeg";
-    // Limpiamos el encabezado para extraer solo la cadena de bytes puros que procesa la API
     const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-    const contents = [
+    const partesContenido = [
       promptTexto,
       {
         inlineData: {
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       const mimeReverso = matchReverso ? matchReverso[1] : "image/jpeg";
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
       
-      contents.push({
+      partesContenido.push({
         inlineData: {
           mimeType: mimeReverso,
           data: cleanReverso
@@ -72,18 +72,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // Ejecución de la llamada al modelo con el nuevo SDK oficial
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: contents,
-      config: {
+    // Llamada al modelo usando la estructura correcta del SDK clásico
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: partesContenido }],
+      generationConfig: {
         temperature: 0.1,
         responseMimeType: 'application/json'
       }
     });
 
-    // CORRECCIÓN: response.text en el nuevo SDK es un string directo
-    const responseText = response.text ? response.text.trim() : "";
+    const responseText = result.response.text() ? result.response.text().trim() : "";
 
     if (!responseText) {
       throw new Error("Gemini devolvió una respuesta vacía.");
@@ -94,7 +92,6 @@ export default async function handler(req, res) {
     try {
       resultadoFinal = JSON.parse(responseText);
     } catch (parseError) {
-      // Fallback de emergencia por si la IA añade bloques markdown ```json ... ```
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("La IA no devolvió un formato JSON válido.");
       resultadoFinal = JSON.parse(jsonMatch[0]);
