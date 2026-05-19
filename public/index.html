@@ -248,6 +248,7 @@
     }
 
     // Petición al Backend /api/scan con Groq
+    // Petición al Backend /api/scan con Groq
     document.getElementById('btnProcesar').onclick = async () => {
       if (!base64Frente) return alert("Debes seleccionar al menos la imagen del Frente para procesar.");
       
@@ -265,9 +266,13 @@
           })
         });
 
-        const resultado = await response.json();
-        if (!response.ok) throw new Error(resultado.error || "Error desconocido del backend");
+        // Modificación Antirrotura: Si el servidor da error (como un 500), leemos el texto directamente
+        if (!response.ok) {
+          const textoError = await response.text();
+          throw new Error(textoError || "Error desconocido en el servidor");
+        }
 
+        const resultado = await response.json();
         jsonExtraidoActual = resultado;
 
         // Auto-completar inputs del formulario
@@ -372,7 +377,7 @@
           query = query.or(`nombres.ilike.%${q}%,curp.ilike.%${q}%,clave_elector.ilike.%${q}%`);
         }
 
-        const { data, error } = await query.order('creado_en', { ascending: false });
+        const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
         const cuerpoTabla = document.getElementById('tablaRegistros');
