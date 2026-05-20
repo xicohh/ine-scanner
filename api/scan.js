@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,86 +12,70 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No se recibió la imagen del frente' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Falta la variable de entorno GEMINI_API_KEY en Vercel' });
+      return res.status(500).json({ error: 'Falta la variable de entorno GROQ_API_KEY en Vercel' });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    // FIX 1: apiVersion debe ser 'v1beta' para gemini-2.0-flash
-    // FIX 2: generationConfig solo se pasa UNA vez, en generateContent
-    const model = genAI.getGenerativeModel(
-      { model: 'gemini-2.0-flash' },
-      { apiVersion: 'v1beta' }
-    );
+    const groq = new Groq({ apiKey });
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
-    Analiza las imágenes adjuntas para extraer la información del documento.
-    
-    REGLAS DE ORO:
-    1. Responde ÚNICAMENTE con el objeto JSON solicitado. No agregues introducciones, explicaciones ni bloques Markdown.
-    2. Si un campo no es legible o no viene, devuélvelo como una cadena vacía "" (o 0 para la sección).
-    3. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
+Analiza las imágenes adjuntas para extraer la información del documento.
 
-    Estructura exacta del JSON que debes devolver:
-    {
-      "apellido_paterno": "VALOR",
-      "apellido_materno": "VALOR",
-      "nombres": "VALOR",
-      "curp": "VALOR",
-      "clave_elector": "VALOR",
-      "seccion": 1234,
-      "estado_revision": "APROBADO/PENDIENTE",
-      "confianza": 95
-    }`;
+REGLAS DE ORO:
+1. Responde ÚNICAMENTE con el objeto JSON solicitado. Sin introducciones, explicaciones ni bloques Markdown.
+2. Si un campo no es legible o no viene, devuélvelo como cadena vacía "" (o 0 para sección y confianza).
+3. Remueve acentos y convierte todo el texto a MAYÚSCULAS.
 
-    const partesContenido = [
-      { text: promptTexto }
+Estructura exacta del JSON:
+{
+  "apellido_paterno": "VALOR",
+  "apellido_materno": "VALOR",
+  "nombres": "VALOR",
+  "curp": "VALOR",
+  "clave_elector": "VALOR",
+  "seccion": 1234,
+  "estado_revision": "APROBADO/PENDIENTE",
+  "confianza": 95
+}`;
+
+    // Armamos el array de contenido con las imágenes
+    const contentParts = [
+      { type: "text", text: promptTexto },
+      {
+        type: "image_url",
+        image_url: { url: imageBase64 }  // Groq acepta data:image/... directamente
+      }
     ];
 
-    // --- PROCESAMIENTO DEL FRENTE ---
-    const matchFrente = imageBase64.match(/^data:(image\/\w+);base64,/);
-    const mimeFrente = matchFrente ? matchFrente[1] : "image/jpeg";
-    const cleanFrente = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-
-    partesContenido.push({
-      inlineData: {
-        mimeType: mimeFrente,
-        data: cleanFrente
-      }
-    });
-
-    // --- PROCESAMIENTO DEL REVERSO (SI EXISTE) ---
+    // Agregamos el reverso si existe
     if (reversoBase64) {
-      const matchReverso = reversoBase64.match(/^data:(image\/\w+);base64,/);
-      const mimeReverso = matchReverso ? matchReverso[1] : "image/jpeg";
-      const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
-
-      partesContenido.push({
-        inlineData: {
-          mimeType: mimeReverso,
-          data: cleanReverso
-        }
+      contentParts.push({
+        type: "image_url",
+        image_url: { url: reversoBase64 }
       });
     }
 
-    // FIX 2: generationConfig unificado aquí, con responseMimeType + temperature
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: partesContenido }],
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
-      }
+    const completion = await groq.chat.completions.create({
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      messages: [
+        {
+          role: "user",
+          content: contentParts
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 500,
+      response_format: { type: "json_object" }
     });
 
-    const responseText = result.response.text() ? result.response.text().trim() : "";
+    const responseText = completion.choices[0]?.message?.content?.trim();
 
     if (!responseText) {
-      throw new Error("Gemini devolvió una respuesta vacía.");
+      throw new Error("Groq devolvió una respuesta vacía.");
     }
 
-    // Parseo seguro del JSON estructurado
+    // Parseo seguro
     let resultadoFinal;
     try {
       resultadoFinal = JSON.parse(responseText);
