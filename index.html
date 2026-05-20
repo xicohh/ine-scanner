@@ -121,10 +121,20 @@
       </div>
 
       <div class="bg-[#111827] border border-slate-800/80 rounded-2xl p-4 shadow-xl flex flex-col h-[480px]">
-        <h2 class="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
-          <i class="bi bi-clock-history text-blue-500"></i>
-          <span>Historial de Escaneos</span>
-        </h2>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white flex items-center space-x-2">
+            <i class="bi bi-clock-history text-blue-500"></i>
+            <span>Historial de Escaneos</span>
+          </h2>
+          <div class="flex space-x-1">
+            <button type="button" id="btnExportCSV" title="Exportar CSV" class="text-xs bg-slate-800 hover:bg-emerald-800 border border-slate-700 hover:border-emerald-600 text-slate-300 hover:text-white px-2 py-1 rounded-lg transition-all flex items-center space-x-1">
+              <i class="bi bi-filetype-csv"></i><span>CSV</span>
+            </button>
+            <button type="button" id="btnExportExcel" title="Exportar Excel" class="text-xs bg-slate-800 hover:bg-blue-800 border border-slate-700 hover:border-blue-600 text-slate-300 hover:text-white px-2 py-1 rounded-lg transition-all flex items-center space-x-1">
+              <i class="bi bi-file-earmark-excel"></i><span>Excel</span>
+            </button>
+          </div>
+        </div>
         
         <div class="relative mb-3">
           <i class="bi bi-search absolute left-3 top-2.5 text-slate-500 text-xs"></i>
@@ -155,6 +165,7 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let fileBlobFrente = null;
+    let datosActuales = []; // Cache de registros para exportacion
     let fileBlobReverso = null;
     let base64Frente = "";
     let base64Reverso = "";
@@ -384,6 +395,7 @@
 
         const { data, error } = await query.order('creado_en', { ascending: false });
         if (error) throw error;
+        datosActuales = data; // Cache para exportacion
 
         const cuerpoTabla = document.getElementById('tablaRegistros');
         if (!cuerpoTabla) return;
@@ -432,6 +444,58 @@
         console.error("Error crítico al renderizar la tabla de historial:", err);
       }
     }
+
+    // ===== EXPORTACION CSV / EXCEL =====
+    function prepararDatosExport() {
+      return datosActuales.map(reg => ({
+        'Nombres':          reg.nombres || '',
+        'Apellido Paterno': reg.apellido_paterno || '',
+        'Apellido Materno': reg.apellido_materno || '',
+        'CURP':             reg.curp || '',
+        'Clave Elector':    reg.clave_elector || '',
+        'Seccion':          reg.seccion || 0,
+        'Estado Revision':  reg.estado_revision || '',
+        'Indice Confianza': reg.indice_confianza || 0,
+        'Fecha Registro':   reg.creado_en ? new Date(reg.creado_en).toLocaleString('es-MX') : '',
+        'URL Evidencia':    reg.url_evidencia || ''
+      }));
+    }
+
+    document.getElementById('btnExportCSV').onclick = () => {
+      const rows = prepararDatosExport();
+      if (!rows.length) return alert('No hay registros para exportar.');
+      const headers = Object.keys(rows[0]);
+      const escape = v => '"' + String(v).replace(/"/g, '""') + '"';
+      const csv = [
+        headers.map(escape).join(','),
+        ...rows.map(r => headers.map(h => escape(r[h])).join(','))
+      ].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'registros_ine_' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('btnExportExcel').onclick = () => {
+      const rows = prepararDatosExport();
+      if (!rows.length) return alert('No hay registros para exportar.');
+      const headers = Object.keys(rows[0]);
+      let xls = '<table><tr>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr>';
+      rows.forEach(r => {
+        xls += '<tr>' + headers.map(h => '<td>' + r[h] + '</td>').join('') + '</tr>';
+      });
+      xls += '</table>';
+      const blob = new Blob(['\uFEFF' + xls], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'registros_ine_' + new Date().toISOString().slice(0,10) + '.xls';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
   </script>
 </body>
 </html>
