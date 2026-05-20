@@ -35,6 +35,8 @@ Estructura exacta del JSON:
   "curp": "VALOR",
   "clave_elector": "VALOR",
   "seccion": 1234,
+  "estado": "ENTIDAD FEDERATIVA (ej: JALISCO)",
+  "direccion": "CALLE, NUMERO, COLONIA, MUNICIPIO",
   "estado_revision": "APROBADO/PENDIENTE",
   "confianza": 95
 }`;

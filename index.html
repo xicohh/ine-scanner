@@ -58,7 +58,7 @@
 
         <button type="button" id="btnProcesar" class="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/30 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2">
           <i class="bi bi-cpu"></i>
-          <span>Procesar</span>
+          <span>Procesar con GeminiAI</span>
         </button>
       </div>
 
@@ -93,6 +93,14 @@
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sección</label>
           <input type="number" id="seccion" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Estado</label>
+          <input type="text" id="estado" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Dirección</label>
+          <input type="text" id="direccion" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
         </div>
 
         <div class="md:col-span-2 pt-2">
@@ -149,6 +157,7 @@
                 <th class="p-2.5">CURP</th>
                 <th class="p-2.5">Sec</th>
                 <th class="p-2.5">Estado</th>
+                <th class="p-2.5 text-center">Acc.</th>
               </tr>
             </thead>
             <tbody id="tablaRegistros" class="text-slate-300 divide-y divide-slate-900">
@@ -298,6 +307,8 @@
         document.getElementById('curp').value = resultado.curp || '';
         document.getElementById('clave_elector').value = resultado.clave_elector || '';
         document.getElementById('seccion').value = resultado.seccion || 0;
+        document.getElementById('estado').value = resultado.estado || '';
+        document.getElementById('direccion').value = resultado.direccion || '';
 
         document.getElementById('btnGuardar').disabled = false;
 
@@ -351,6 +362,8 @@
           seccion: seccionEntera,
           estado_revision: valorConfianza >= 85 ? 'APROBADO' : 'PENDIENTE',
           indice_confianza: valorConfianza,
+          estado: document.getElementById('estado').value.trim(),
+          direccion: document.getElementById('direccion').value.trim(),
           url_evidencia: urlPublica
         }]);
 
@@ -422,8 +435,9 @@
             ? 'bg-emerald-950 text-emerald-400 border-emerald-800' 
             : 'bg-amber-950 text-amber-400 border-amber-800';
           
-          cuerpoTabla.innerHTML += `
-            <tr class="border-b border-slate-800/50 hover:bg-blue-950/20 transition-all">
+          const tr = document.createElement('tr');
+          tr.className = "border-b border-slate-800/50 hover:bg-blue-950/20 transition-all";
+          tr.innerHTML = `
               <td class="p-2.5 font-semibold text-white max-w-[120px] truncate" title="${nombreCompleto}">${nombreCompleto}</td>
               <td class="p-2.5 font-mono text-blue-400 uppercase">${curpVal}</td>
               <td class="p-2.5">${seccionVal}</td>
@@ -432,8 +446,14 @@
                   ${estadoRev}
                 </span>
               </td>
-            </tr>
+              <td class="p-2.5 text-center">
+                <button class="text-slate-500 hover:text-red-400 transition-colors" title="Eliminar registro">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </td>
           `;
+          tr.querySelector('button').addEventListener('click', () => eliminarRegistro(reg.id, nombreCompleto));
+          cuerpoTabla.appendChild(tr);
         });
 
         if(document.getElementById('statTotal')) document.getElementById('statTotal').textContent = data.length;
@@ -442,6 +462,18 @@
 
       } catch (err) {
         console.error("Error crítico al renderizar la tabla de historial:", err);
+      }
+    }
+
+    // ===== ELIMINAR REGISTRO =====
+    async function eliminarRegistro(id, nombre) {
+      if (!confirm(`¿Eliminar el registro de ${nombre}?\nEsta acción no se puede deshacer.`)) return;
+      try {
+        const { error } = await supabaseClient.from('registros_ine').delete().eq('id', id);
+        if (error) throw error;
+        fetchTableData();
+      } catch (err) {
+        alert('Error al eliminar: ' + err.message);
       }
     }
 
