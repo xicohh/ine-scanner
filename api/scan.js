@@ -19,10 +19,10 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // FIX 1: apiVersion debe ser 'v1beta' para gemini-1.5-flash
+    // FIX 1: apiVersion debe ser 'v1beta' para gemini-2.0-flash
     // FIX 2: generationConfig solo se pasa UNA vez, en generateContent
     const model = genAI.getGenerativeModel(
-      { model: 'gemini-1.5-flash' },
+      { model: 'gemini-2.0-flash' },
       { apiVersion: 'v1beta' }
     );
 
