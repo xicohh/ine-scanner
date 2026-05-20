@@ -18,15 +18,12 @@ export default async function handler(req, res) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // CORRECCIÓN AQUÍ: Declaramos el tipo de respuesta directo en la inicialización del modelo
-    // para evitar el error de mapeo interno de la propiedad 'generationConfig'.
+
+    // FIX 1: apiVersion debe ser 'v1beta' para gemini-1.5-flash
+    // FIX 2: generationConfig solo se pasa UNA vez, en generateContent
     const model = genAI.getGenerativeModel(
-      { 
-        model: 'gemini-1.5-flash',
-        generationConfig: { responseMimeType: 'application/json' }
-      }, 
-      { apiVersion: 'v1' }
+      { model: 'gemini-1.5-flash' },
+      { apiVersion: 'v1beta' }
     );
 
     const promptTexto = `Eres un sistema experto OCR automatizado para credenciales INE de México.
@@ -70,7 +67,7 @@ export default async function handler(req, res) {
       const matchReverso = reversoBase64.match(/^data:(image\/\w+);base64,/);
       const mimeReverso = matchReverso ? matchReverso[1] : "image/jpeg";
       const cleanReverso = reversoBase64.replace(/^data:image\/\w+;base64,/, "");
-      
+
       partesContenido.push({
         inlineData: {
           mimeType: mimeReverso,
@@ -79,11 +76,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // Ejecutamos la petición con una configuración de temperatura limpia
+    // FIX 2: generationConfig unificado aquí, con responseMimeType + temperature
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: partesContenido }],
       generationConfig: {
-        temperature: 0.1
+        temperature: 0.1,
+        responseMimeType: 'application/json'
       }
     });
 
@@ -111,9 +109,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Error crítico en el backend:", error);
-    return res.status(500).json({ 
-      error: 'Error interno en el escáner', 
-      details: error.message 
+    return res.status(500).json({
+      error: 'Error interno en el escáner',
+      details: error.message
     });
   }
 }
